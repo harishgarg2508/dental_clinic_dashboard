@@ -19,14 +19,15 @@ import {
   updateDoc,
 } from "firebase/firestore"
 
+
 const firebaseConfig = {
-  apiKey: "AIzaSyDaQkNkqG3dwqU-nWltobC-YyiwQy6s6FQ",
-  authDomain: "patientdata-5fe9c.firebaseapp.com",
-  projectId: "patientdata-5fe9c",
-  storageBucket: "patientdata-5fe9c.firebasestorage.app",
-  messagingSenderId: "893013788176",
-  appId: "1:893013788176:web:c20c7fef07343dbb9f6c95",
-  measurementId: "G-ZC8WEEZW4D",
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY!,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN!,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID!,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET!,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID!,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID!,
+  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID!,
 }
 
 function createFirebaseApp(): FirebaseApp {

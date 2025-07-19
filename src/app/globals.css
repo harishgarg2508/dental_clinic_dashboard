@@ -5,6 +5,17 @@
 
 @layer base {
   :root {
+    /* ... other variables */
+    --sidebar-background: 240 4.8% 95.9%; /* Light Mode: A light gray */
+  }
+
+  .dark {
+    /* ... other variables */
+    --sidebar-background: 240 5.9% 10%; /* Dark Mode: A very dark gray/blue */
+  }
+}
+@layer base {
+  :root {
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
     --card: 0 0% 100%;

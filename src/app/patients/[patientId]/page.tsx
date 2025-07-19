@@ -224,7 +224,7 @@ export default function PatientDetailPage() {
         return
       }
 
-      console.log(`💰 Updating payment for treatment ${selectedTreatment.id} to $${amount}`)
+      console.log(`💰 Updating payment for treatment ${selectedTreatment.id} to ₹${amount}`)
 
       await updateTreatmentPayment(selectedTreatment.id, amount)
 
@@ -366,7 +366,8 @@ export default function PatientDetailPage() {
     return (
       <div className="space-y-4">
         <div className="flex items-center space-x-4">
-          <Button asChild variant="outline" size="sm">
+          <Button
+           asChild variant="outline" size="sm">
             <Link href="/patients">
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back to Patients
@@ -399,7 +400,9 @@ export default function PatientDetailPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
-          <Button asChild variant="outline" size="sm">
+          <Button
+          className="bg-gray-600 hover:bg-gray-700 text-white" 
+           asChild variant="outline" size="sm">
             <Link href="/patients">
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back to Patients
@@ -411,427 +414,493 @@ export default function PatientDetailPage() {
           </div>
         </div>
         <div className="flex space-x-2">
-          <Button onClick={handleRefresh} variant="outline" disabled={refreshing}>
+          <Button
+          className="bg-gray-600 hover:bg-gray-700 text-white"
+           onClick={handleRefresh} variant="outline" disabled={refreshing}>
             <RefreshCw className={`mr-2 h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
             Refresh
           </Button>
-          <Button onClick={handleExportCompletePDF} variant="outline">
+          <Button
+          className="bg-green-600 hover:bg-blue-700 text-white"
+          
+          onClick={handleExportCompletePDF} variant="outline">
             <Download className="mr-2 h-4 w-4" />
             Export PDF
           </Button>
-          <Button onClick={() => setShowAddTreatment(true)}>
-            <Plus className="mr-2 h-4 w-4" />
+          <Button
+          className="bg-blue-600 hover:bg-blue-700 text-white"
+          
+          onClick={() => setShowAddTreatment(true)}>
+            <Plus className="  mr-2 h-4 w-4" />
             Add Treatment
           </Button>
         </div>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-3">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <User className="mr-2 h-5 w-5" />
-              Patient Information
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex items-center space-x-2">
-              <Phone className="h-4 w-4 text-muted-foreground" />
-              <span>{patient.phone}</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-              <span>Age: {calculateAge(patient.dob)} years</span>
-            </div>
-            <div>
-              <span className="text-sm text-muted-foreground">Gender: </span>
-              <span>{patient.gender || "Not specified"}</span>
-            </div>
-            <div>
-              <span className="text-sm text-muted-foreground">First Visit: </span>
-              <span>{format(patient.firstVisitDate, "MMM dd, yyyy")}</span>
-            </div>
-          </CardContent>
-        </Card>
+    <div className="grid gap-8 md:grid-cols-3">
+  {/* Patient Information Card */}
+  <Card className="bg-white dark:bg-slate-700 transform transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl rounded-xl shadow-lg border border-slate-200 dark:border-slate-800 cursor-pointer">
+    <CardHeader>
+      <CardTitle className="flex items-center text-xl font-extrabold text-slate-900 dark:text-slate-100">
+        <User className="mr-3 h-6 w-6 text-blue-500" />
+        Patient Information
+      </CardTitle>
+    </CardHeader>
+    <CardContent className="space-y-4 text-base">
+      <div className="flex items-center space-x-3">
+        <Phone className="h-5 w-5 text-slate-500 dark:text-slate-400" />
+        <span className="font-semibold text-slate-700 dark:text-slate-300">{patient.phone}</span>
+      </div>
+      <div className="flex items-center space-x-3">
+        <Calendar className="h-5 w-5 text-slate-500 dark:text-slate-400" />
+        <span className="font-semibold text-slate-700 dark:text-slate-300">Age: {calculateAge(patient.dob)} years</span>
+      </div>
+      <div>
+        <span className="font-medium text-slate-600 dark:text-slate-400">Gender: </span>
+        <span className="font-bold text-slate-800 dark:text-slate-200">{patient.gender || "Not specified"}</span>
+      </div>
+      <div>
+        <span className="font-medium text-slate-600 dark:text-slate-400">First Visit: </span>
+        <span className="font-bold text-slate-800 dark:text-slate-200">{format(patient.firstVisitDate, "MMM dd, yyyy")}</span>
+      </div>
+    </CardContent>
+  </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <Receipt className="mr-2 h-5 w-5" />
-              Financial Summary
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex justify-between">
-              <span className="text-sm text-muted-foreground">Total Billed:</span>
-              <span className="font-medium">${patient.totalBilled.toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-sm text-muted-foreground">Total Paid:</span>
-              <span className="font-medium text-green-600">${patient.totalPaid.toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between border-t pt-2">
-              <span className="font-medium">Outstanding Balance:</span>
-              <span className={`font-bold ${patient.outstandingBalance > 0 ? "text-destructive" : "text-green-600"}`}>
-                ${patient.outstandingBalance.toFixed(2)}
-              </span>
-            </div>
-          </CardContent>
-        </Card>
+  {/* Financial Summary Card */}
+  <Card className="bg-white dark:bg-slate-700 transform transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl rounded-xl shadow-lg border border-slate-200 dark:border-slate-800 cursor-pointer">
+    <CardHeader>
+      <CardTitle className="flex items-center text-xl font-extrabold text-slate-900 dark:text-slate-100">
+        <Receipt className="mr-3 h-6 w-6 text-green-500" />
+        Financial Summary
+      </CardTitle>
+    </CardHeader>
+    <CardContent className="space-y-4">
+      <div className="flex justify-between items-baseline">
+        <span className="font-medium text-slate-600 dark:text-slate-400">Total Billed:</span>
+        <span className="text-lg font-bold text-slate-800 dark:text-slate-200">₹{patient.totalBilled.toFixed(2)}</span>
+      </div>
+      <div className="flex justify-between items-baseline">
+        <span className="font-medium text-slate-600 dark:text-slate-400">Total Paid:</span>
+        <span className="text-lg font-bold text-green-600 dark:text-green-500">₹{patient.totalPaid.toFixed(2)}</span>
+      </div>
+      <div className="flex justify-between border-t border-slate-200 dark:border-slate-700 pt-3 mt-2">
+        <span className="text-lg font-semibold text-slate-800 dark:text-slate-200">Outstanding:</span>
+        <span className={`text-2xl font-extrabold ${patient.outstandingBalance > 0 ? "text-red-600 dark:text-red-500" : "text-green-600 dark:text-green-500"}`}>
+          ₹{patient.outstandingBalance.toFixed(2)}
+        </span>
+      </div>
+    </CardContent>
+  </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Treatment Statistics</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
+  {/* Treatment Statistics Card */}
+  <Card className="bg-white dark:bg-slate-700 transform transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl rounded-xl shadow-lg border border-slate-200 dark:border-slate-800 cursor-pointer">
+    <CardHeader>
+      <CardTitle className="text-xl font-extrabold text-slate-900 dark:text-slate-100">Treatment Statistics</CardTitle>
+    </CardHeader>
+    <CardContent className="space-y-4">
+      <div className="flex justify-between items-baseline">
+        <span className="font-medium text-slate-600 dark:text-slate-400">Total Treatments:</span>
+        <span className="text-xl font-bold text-slate-800 dark:text-slate-200">{treatments.length}</span>
+      </div>
+      <div className="flex justify-between items-baseline">
+        <span className="font-medium text-slate-600 dark:text-slate-400">Paid Treatments:</span>
+        <span className="text-xl font-bold text-green-600 dark:text-green-500">
+          {treatments.filter((t) => t.paymentStatus === "PAID").length}
+        </span>
+      </div>
+      <div className="flex justify-between items-baseline">
+        <span className="font-medium text-slate-600 dark:text-slate-400">Upcoming:</span>
+        <span className="text-xl font-bold text-blue-600 dark:text-blue-500">
+          {treatments.filter((t) => t.tro && new Date(t.tro) > new Date()).length}
+        </span>
+      </div>
+    </CardContent>
+  </Card>
+</div>
+
+     <Card className="bg-white shadow-md rounded-xl">
+  <CardHeader>
+    <CardTitle className="text-xl font-bold text-gray-800">
+      Treatment History ({treatments.length} treatments)
+    </CardTitle>
+    <CardDescription className="text-gray-600">
+      Complete history of all treatments and procedures for this patient
+    </CardDescription>
+  </CardHeader>
+
+  <CardContent>
+    {treatments.length === 0 ? (
+      <div className="text-center py-12">
+        <AlertCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+        <h3 className="text-lg font-semibold text-gray-700 mb-2">No Treatments Found</h3>
+        <p className="text-gray-500 mb-4">This patient doesn't have any treatment records yet.</p>
+        <Button onClick={() => setShowAddTreatment(true)} className="bg-primary text-white hover:bg-primary/90">
+          <Plus className="mr-2 h-4 w-4" />
+          Add First Treatment
+        </Button>
+      </div>
+    ) : (
+      <div className="rounded-md border border-gray-200 overflow-x-auto">
+        <Table>
+          <TableHeader className="bg-gray-100">
+            <TableRow>
+              <TableHead className="text-gray-600 font-semibold">Date</TableHead>
+              <TableHead className="text-gray-600 font-semibold">Diagnosis</TableHead>
+              <TableHead className="text-gray-600 font-semibold">Treatment</TableHead>
+              <TableHead className="text-gray-600 font-semibold">Tooth #</TableHead>
+              <TableHead className="text-gray-600 font-semibold">Amount</TableHead>
+              <TableHead className="text-gray-600 font-semibold">Paid</TableHead>
+              <TableHead className="text-gray-600 font-semibold">Balance</TableHead>
+              <TableHead className="text-gray-600 font-semibold">Status</TableHead>
+              <TableHead className="text-gray-600 font-semibold">Next Appt (TRO)</TableHead>
+              <TableHead className="text-gray-600 font-semibold">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+
+          <TableBody>
+            {treatments.map((treatment) => {
+              const bg =
+                treatment.paymentStatus === "PAID"
+                  ? "bg-green-50"
+                  : treatment.paymentStatus === "PARTIALLY_PAID"
+                  ? "bg-yellow-50"
+                  : "bg-red-50"
+
+              return (
+                <TableRow key={treatment.id} className={`${bg} hover:bg-opacity-80 transition`}>
+                  <TableCell className="text-sm text-gray-700">
+                    {format(treatment.entryDate, "MMM dd, yyyy")}
+                  </TableCell>
+                  <TableCell className="max-w-[200px] text-sm text-gray-700">
+                    <div className="truncate" title={treatment.diagnosis}>
+                      {treatment.diagnosis}
+                    </div>
+                  </TableCell>
+                  <TableCell className="max-w-[200px] text-sm text-gray-600">
+                    <div className="truncate" title={treatment.treatmentPlan}>
+                      {treatment.treatmentPlan}
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-sm text-gray-700">
+                    {treatment.toothNumber || "N/A"}
+                  </TableCell>
+                  <TableCell className="text-sm font-medium text-gray-800">
+                    ₹{treatment.totalAmount.toFixed(2)}
+                  </TableCell>
+                  <TableCell className="text-sm font-medium text-green-600">
+                    ₹{treatment.amountPaid.toFixed(2)}
+                  </TableCell>
+                  <TableCell className={treatment.balance > 0 ? "text-red-600 font-semibold" : "text-green-600 font-semibold"}>
+                    ₹{treatment.balance.toFixed(2)}
+                  </TableCell>
+                  <TableCell>
+                    <Badge
+                      variant={
+                        treatment.paymentStatus === "PAID"
+                          ? "default"
+                          : treatment.paymentStatus === "PARTIALLY_PAID"
+                          ? "secondary"
+                          : "destructive"
+                      }
+                      className="text-xs px-2 py-1 font-semibold"
+                    >
+                      {treatment.paymentStatus}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    {treatment.tro ? (
+                      <span className="text-blue-600 font-medium text-sm">
+                        {format(treatment.tro, "MMM dd, yyyy")}
+                      </span>
+                    ) : (
+                      <span className="text-gray-400 text-sm">N/A</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        size="sm"
+                        onClick={() => openEditPayment(treatment)}
+                        className="bg-blue-100 text-blue-800 hover:bg-blue-200"
+                      >
+                        <Edit className="mr-1 h-3 w-3" />
+                        Edit
+                      </Button>
+
+                      <Button
+                        size="sm"
+                        onClick={() => handleGenerateReceipt(treatment)}
+                        className="bg-purple-100 text-purple-800 hover:bg-purple-200"
+                      >
+                        <Receipt className="mr-1 h-3 w-3" />
+                        Receipt
+                      </Button>
+
+                      <Button
+                        size="sm"
+                        onClick={() => handleSendToWhatsApp(treatment)}
+                        className="bg-green-100 text-green-700 hover:bg-green-200"
+                      >
+                        <svg className="mr-1 h-3 w-3 text-green-600 bg" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M17.472 14.382c...Z" />
+                        </svg>
+                        WhatsApp
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              )
+            })}
+          </TableBody>
+        </Table>
+      </div>
+    )}
+  </CardContent>
+</Card>
+
+
+  {/* Add Treatment Dialog */}
+<Dialog open={showAddTreatment} onOpenChange={setShowAddTreatment}>
+  <DialogContent className="sm:max-w-[600px] bg-white dark:bg-slate-900">
+    <DialogHeader>
+      <DialogTitle className="text-xl font-bold text-slate-900 dark:text-slate-100">
+        Add New Treatment
+      </DialogTitle>
+      <DialogDescription className="text-slate-600 dark:text-slate-400">
+        Add a new treatment record for{' '}
+        <strong className="text-slate-700 dark:text-slate-300">{patient.name}</strong> (ID: {patient.id})
+      </DialogDescription>
+    </DialogHeader>
+
+    <form onSubmit={handleAddTreatment}>
+      <div className="grid gap-6 py-4">
+        {/* Input fields with improved styling */}
+        <div className="space-y-2">
+          <Label htmlFor="diagnosis" className="font-medium text-slate-700 dark:text-slate-300">
+            Diagnosis *
+          </Label>
+          <Textarea
+            id="diagnosis"
+            value={newTreatment.diagnosis}
+            onChange={(e) => setNewTreatment((prev) => ({ ...prev, diagnosis: e.target.value }))}
+            placeholder="Enter diagnosis details"
+            required
+            className="bg-slate-50 border-slate-300 text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-50 dark:placeholder:text-slate-500 dark:focus:ring-blue-600"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="treatmentPlan" className="font-medium text-slate-700 dark:text-slate-300">
+            Treatment Plan
+          </Label>
+          <Textarea
+            id="treatmentPlan"
+            value={newTreatment.treatmentPlan}
+            onChange={(e) => setNewTreatment((prev) => ({ ...prev, treatmentPlan: e.target.value }))}
+            placeholder="Describe the treatment plan"
+            className="bg-slate-50 border-slate-300 text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-50 dark:placeholder:text-slate-500 dark:focus:ring-blue-600"
+          />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-2">
+            <Label htmlFor="toothNumber" className="font-medium text-slate-700 dark:text-slate-300">
+              Tooth Number
+            </Label>
+            <Input
+              id="toothNumber"
+              value={newTreatment.toothNumber}
+              onChange={(e) => setNewTreatment((prev) => ({ ...prev, toothNumber: e.target.value }))}
+              placeholder="e.g., 25, 14-15"
+              className="bg-slate-50 border-slate-300 text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-50 dark:placeholder:text-slate-500 dark:focus:ring-blue-600"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="tro" className="font-medium text-slate-700 dark:text-slate-300 flex items-center gap-2">
+              <Calendar className="h-4 w-4 text-slate-500" />
+              Next Appointment (TRO)
+            </Label>
+            <Input
+              id="tro"
+              type="date"
+              value={newTreatment.tro}
+              onChange={(e) => setNewTreatment((prev) => ({ ...prev, tro: e.target.value }))}
+              min={new Date().toISOString().split('T')[0]}
+              className="bg-slate-50 border-slate-300 text-slate-900 focus:ring-2 focus:ring-blue-500 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-50 dark:focus:ring-blue-600"
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="totalAmount" className="font-medium text-slate-700 dark:text-slate-300">
+              Total Amount *
+            </Label>
+            <Input
+              id="totalAmount"
+              type="number"
+              step="0.01"
+              min="0"
+              value={newTreatment.totalAmount}
+              onChange={(e) => setNewTreatment((prev) => ({ ...prev, totalAmount: e.target.value }))}
+              placeholder="0.00"
+              required
+              className="bg-slate-50 border-slate-300 text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-50 dark:placeholder:text-slate-500 dark:focus:ring-blue-600"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="amountPaid" className="font-medium text-slate-700 dark:text-slate-300">
+              Amount Paid
+            </Label>
+            <Input
+              id="amountPaid"
+              type="number"
+              step="0.01"
+              min="0"
+              value={newTreatment.amountPaid}
+              onChange={(e) => setNewTreatment((prev) => ({ ...prev, amountPaid: e.target.value }))}
+              placeholder="0.00"
+              className="bg-slate-50 border-slate-300 text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-50 dark:placeholder:text-slate-500 dark:focus:ring-blue-600"
+            />
+          </div>
+        </div>
+
+        {/* Financial Summary Box */}
+        <div className="p-4 bg-slate-100 dark:bg-slate-800 rounded-lg">
+          <div className="text-sm space-y-2">
             <div className="flex justify-between">
-              <span className="text-sm text-muted-foreground">Total Treatments:</span>
-              <span className="font-medium">{treatments.length}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-sm text-muted-foreground">Paid Treatments:</span>
-              <span className="font-medium text-green-600">
-                {treatments.filter((t) => t.paymentStatus === "PAID").length}
+              <span className="text-slate-600 dark:text-slate-400">Total Amount:</span>
+              <span className="font-semibold text-slate-800 dark:text-slate-200">
+                ₹{parseFloat(newTreatment.totalAmount || '0').toFixed(2)}
               </span>
             </div>
             <div className="flex justify-between">
-              <span className="text-sm text-muted-foreground">Upcoming Appointments:</span>
-              <span className="font-medium text-blue-600">
-                {treatments.filter((t) => t.tro && t.tro > new Date()).length}
+              <span className="text-slate-600 dark:text-slate-400">Amount Paid:</span>
+              <span className="font-semibold text-green-600 dark:text-green-500">
+                ₹{parseFloat(newTreatment.amountPaid || '0').toFixed(2)}
               </span>
             </div>
-          </CardContent>
-        </Card>
+            <div className="flex justify-between font-bold border-t border-slate-200 dark:border-slate-700 pt-2 mt-2">
+              <span className="text-slate-700 dark:text-slate-300">Balance Due:</span>
+              <span
+                className={
+                  parseFloat(newTreatment.totalAmount || '0') - parseFloat(newTreatment.amountPaid || '0') > 0
+                    ? 'text-red-600 dark:text-red-500'
+                    : 'text-green-600 dark:text-green-500'
+                }
+              >
+                ₹{(parseFloat(newTreatment.totalAmount || '0') - parseFloat(newTreatment.amountPaid || '0')).toFixed(2)}
+              </span>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Treatment History ({treatments.length} treatments)</CardTitle>
-          <CardDescription>Complete history of all treatments and procedures for this patient</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {treatments.length === 0 ? (
-            <div className="text-center py-12">
-              <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">No Treatments Found</h3>
-              <p className="text-muted-foreground mb-4">This patient doesn't have any treatment records yet.</p>
-              <Button onClick={() => setShowAddTreatment(true)}>
-                <Plus className="mr-2 h-4 w-4" />
-                Add First Treatment
-              </Button>
+      <DialogFooter className="mt-4">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => setShowAddTreatment(false)}
+          disabled={addingTreatment}
+          className="dark:text-slate-300 dark:border-slate-600 dark:hover:bg-slate-800"
+        >
+          Cancel
+        </Button>
+        <Button type="submit" disabled={addingTreatment} className="bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50">
+          {addingTreatment ? 'Adding...' : 'Add Treatment'}
+        </Button>
+      </DialogFooter>
+    </form>
+  </DialogContent>
+</Dialog>
+
+
+     {/* Edit Payment Dialog */}
+<Dialog open={showEditPayment} onOpenChange={setShowEditPayment}>
+  <DialogContent className="bg-gray-900 text-gray-100">
+    <DialogHeader>
+      <DialogTitle className="text-lg font-semibold text-white">Update Payment</DialogTitle>
+      <DialogDescription className="text-sm text-gray-400">
+        Update payment for treatment: {selectedTreatment?.diagnosis}
+      </DialogDescription>
+    </DialogHeader>
+    <form onSubmit={handleUpdatePayment}>
+      <div className="grid gap-4 py-4">
+        <div className="space-y-2">
+          <Label className="text-gray-300">Treatment Details</Label>
+          <div className="p-3 bg-gray-800 rounded-lg text-sm space-y-1">
+            <div className="flex justify-between">
+              <span className="text-gray-400">Total Amount:</span>
+              <span className="font-medium text-white">₹{selectedTreatment?.totalAmount.toFixed(2)}</span>
             </div>
-          ) : (
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Diagnosis</TableHead>
-                    <TableHead>Treatment</TableHead>
-                    <TableHead>Tooth #</TableHead>
-                    <TableHead>Amount</TableHead>
-                    <TableHead>Paid</TableHead>
-                    <TableHead>Balance</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Next Appt (TRO)</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {treatments.map((treatment) => (
-                    <TableRow key={treatment.id}>
-                      <TableCell>{format(treatment.entryDate, "MMM dd, yyyy")}</TableCell>
-                      <TableCell className="max-w-[200px]">
-                        <div className="truncate" title={treatment.diagnosis}>
-                          {treatment.diagnosis}
-                        </div>
-                      </TableCell>
-                      <TableCell className="max-w-[200px]">
-                        <div className="truncate" title={treatment.treatmentPlan}>
-                          {treatment.treatmentPlan}
-                        </div>
-                      </TableCell>
-                      <TableCell>{treatment.toothNumber || "N/A"}</TableCell>
-                      <TableCell>${treatment.totalAmount.toFixed(2)}</TableCell>
-                      <TableCell className="text-green-600">${treatment.amountPaid.toFixed(2)}</TableCell>
-                      <TableCell className={treatment.balance > 0 ? "text-destructive" : "text-green-600"}>
-                        ${treatment.balance.toFixed(2)}
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          variant={
-                            treatment.paymentStatus === "PAID"
-                              ? "default"
-                              : treatment.paymentStatus === "PARTIALLY_PAID"
-                                ? "secondary"
-                                : "destructive"
-                          }
-                        >
-                          {treatment.paymentStatus}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        {treatment.tro ? (
-                          <span
-                            className={`text-sm ${treatment.tro > new Date() ? "text-blue-600 font-medium" : "text-muted-foreground"}`}
-                          >
-                            {format(treatment.tro, "MMM dd, yyyy")}
-                          </span>
-                        ) : (
-                          <span className="text-muted-foreground text-sm">N/A</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex space-x-2">
-                          <Button variant="outline" size="sm" onClick={() => openEditPayment(treatment)}>
-                            <Edit className="mr-1 h-3 w-3" />
-                            Edit Payment
-                          </Button>
-                          <Button variant="outline" size="sm" onClick={() => handleGenerateReceipt(treatment)}>
-                            <Receipt className="mr-1 h-3 w-3" />
-                            Receipt
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleSendToWhatsApp(treatment)}
-                            className="text-green-600 hover:text-green-700"
-                          >
-                            <svg className="mr-1 h-3 w-3" fill="currentColor" viewBox="0 0 24 24">
-                              <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0020.885 3.488" />
-                            </svg>
-                            WhatsApp
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+            <div className="flex justify-between">
+              <span className="text-gray-400">Current Paid:</span>
+              <span className="font-medium text-green-400">₹{selectedTreatment?.amountPaid.toFixed(2)}</span>
             </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Add Treatment Dialog */}
-      <Dialog open={showAddTreatment} onOpenChange={setShowAddTreatment}>
-        <DialogContent className="sm:max-w-[600px]">
-          <DialogHeader>
-            <DialogTitle>Add New Treatment</DialogTitle>
-            <DialogDescription>
-              Add a new treatment record for <strong>{patient.name}</strong> (ID: {patient.id})
-            </DialogDescription>
-          </DialogHeader>
-          <form onSubmit={handleAddTreatment}>
-            <div className="grid gap-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="diagnosis">Diagnosis *</Label>
-                <Textarea
-                  id="diagnosis"
-                  value={newTreatment.diagnosis}
-                  onChange={(e) => setNewTreatment((prev) => ({ ...prev, diagnosis: e.target.value }))}
-                  placeholder="Enter diagnosis details"
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="treatmentPlan">Treatment Plan</Label>
-                <Textarea
-                  id="treatmentPlan"
-                  value={newTreatment.treatmentPlan}
-                  onChange={(e) => setNewTreatment((prev) => ({ ...prev, treatmentPlan: e.target.value }))}
-                  placeholder="Describe the treatment plan"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="toothNumber">Tooth Number</Label>
-                <Input
-                  id="toothNumber"
-                  value={newTreatment.toothNumber}
-                  onChange={(e) => setNewTreatment((prev) => ({ ...prev, toothNumber: e.target.value }))}
-                  placeholder="e.g., 25, 14-15"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="tro" className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4" />
-                  Next Appointment (TRO) - Optional
-                </Label>
-                <Input
-                  id="tro"
-                  type="date"
-                  value={newTreatment.tro}
-                  onChange={(e) => setNewTreatment((prev) => ({ ...prev, tro: e.target.value }))}
-                  min={new Date().toISOString().split("T")[0]}
-                />
-                <p className="text-xs text-muted-foreground">
-                  Leave empty for one-day treatments that don't require follow-up
-                </p>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="totalAmount">Total Amount *</Label>
-                  <Input
-                    id="totalAmount"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={newTreatment.totalAmount}
-                    onChange={(e) => setNewTreatment((prev) => ({ ...prev, totalAmount: e.target.value }))}
-                    placeholder="0.00"
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="amountPaid">Amount Paid</Label>
-                  <Input
-                    id="amountPaid"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={newTreatment.amountPaid}
-                    onChange={(e) => setNewTreatment((prev) => ({ ...prev, amountPaid: e.target.value }))}
-                    placeholder="0.00"
-                  />
-                </div>
-              </div>
-
-              <div className="p-3 bg-muted rounded-lg">
-                <div className="text-sm">
-                  <div className="flex justify-between">
-                    <span>Total Amount:</span>
-                    <span>${Number.parseFloat(newTreatment.totalAmount || "0").toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Amount Paid:</span>
-                    <span>${Number.parseFloat(newTreatment.amountPaid || "0").toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between font-medium border-t pt-1 mt-1">
-                    <span>Balance:</span>
-                    <span
-                      className={
-                        Number.parseFloat(newTreatment.totalAmount || "0") -
-                          Number.parseFloat(newTreatment.amountPaid || "0") >
-                        0
-                          ? "text-destructive"
-                          : "text-green-600"
-                      }
-                    >
-                      $
-                      {(
-                        Number.parseFloat(newTreatment.totalAmount || "0") -
-                        Number.parseFloat(newTreatment.amountPaid || "0")
-                      ).toFixed(2)}
-                    </span>
-                  </div>
-                  {newTreatment.tro && (
-                    <div className="flex justify-between mt-2 pt-2 border-t">
-                      <span className="text-blue-600">Next Appointment:</span>
-                      <span className="text-blue-600 font-medium">
-                        {new Date(newTreatment.tro).toLocaleDateString()}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </div>
+            <div className="flex justify-between">
+              <span className="text-gray-400">Current Balance:</span>
+              <span className="font-medium text-red-400">₹{selectedTreatment?.balance.toFixed(2)}</span>
             </div>
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setShowAddTreatment(false)}
-                disabled={addingTreatment}
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="paymentAmount" className="text-gray-300">New Payment Amount</Label>
+          <Input
+            id="paymentAmount"
+            type="number"
+            step="0.01"
+            min="0"
+            max={selectedTreatment?.totalAmount}
+            value={paymentAmount}
+            onChange={(e) => setPaymentAmount(e.target.value)}
+            placeholder="0.00"
+            required
+            className="bg-gray-800 border-gray-700 text-white placeholder-gray-500"
+          />
+        </div>
+
+        <div className="p-3 bg-gray-800 rounded-lg">
+          <div className="text-sm">
+            <div className="flex justify-between font-medium">
+              <span className="text-gray-400">New Balance:</span>
+              <span
+                className={
+                  (selectedTreatment?.totalAmount || 0) - Number.parseFloat(paymentAmount || "0") > 0
+                    ? "text-red-400"
+                    : "text-green-400"
+                }
               >
-                Cancel
-              </Button>
-              <Button type="submit" disabled={addingTreatment}>
-                {addingTreatment ? "Adding Treatment..." : "Add Treatment"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
-
-      {/* Edit Payment Dialog */}
-      <Dialog open={showEditPayment} onOpenChange={setShowEditPayment}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Update Payment</DialogTitle>
-            <DialogDescription>Update payment for treatment: {selectedTreatment?.diagnosis}</DialogDescription>
-          </DialogHeader>
-          <form onSubmit={handleUpdatePayment}>
-            <div className="grid gap-4 py-4">
-              <div className="space-y-2">
-                <Label>Treatment Details</Label>
-                <div className="p-3 bg-muted rounded-lg text-sm">
-                  <div className="flex justify-between">
-                    <span>Total Amount:</span>
-                    <span>${selectedTreatment?.totalAmount.toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Current Paid:</span>
-                    <span>${selectedTreatment?.amountPaid.toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Current Balance:</span>
-                    <span>${selectedTreatment?.balance.toFixed(2)}</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="paymentAmount">New Payment Amount</Label>
-                <Input
-                  id="paymentAmount"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  max={selectedTreatment?.totalAmount}
-                  value={paymentAmount}
-                  onChange={(e) => setPaymentAmount(e.target.value)}
-                  placeholder="0.00"
-                  required
-                />
-              </div>
-
-              <div className="p-3 bg-muted rounded-lg">
-                <div className="text-sm">
-                  <div className="flex justify-between font-medium">
-                    <span>New Balance:</span>
-                    <span
-                      className={
-                        (selectedTreatment?.totalAmount || 0) - Number.parseFloat(paymentAmount || "0") > 0
-                          ? "text-destructive"
-                          : "text-green-600"
-                      }
-                    >
-                      ${((selectedTreatment?.totalAmount || 0) - Number.parseFloat(paymentAmount || "0")).toFixed(2)}
-                    </span>
-                  </div>
-                </div>
-              </div>
+                ₹{((selectedTreatment?.totalAmount || 0) - Number.parseFloat(paymentAmount || "0")).toFixed(2)}
+              </span>
             </div>
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setShowEditPayment(false)}
-                disabled={updatingPayment}
-              >
-                Cancel
-              </Button>
-              <Button type="submit" disabled={updatingPayment}>
-                {updatingPayment ? "Updating Payment..." : "Update Payment"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+          </div>
+        </div>
+      </div>
+      <DialogFooter className="mt-4">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => setShowEditPayment(false)}
+          disabled={updatingPayment}
+          className="border-gray-600 text-gray-300 hover:bg-gray-800"
+        >
+          Cancel
+        </Button>
+        <Button
+          type="submit"
+          disabled={updatingPayment}
+          className="bg-green-600 hover:bg-green-700 text-white"
+        >
+          {updatingPayment ? "Updating Payment..." : "Update Payment"}
+        </Button>
+      </DialogFooter>
+    </form>
+  </DialogContent>
+</Dialog>
+
     </div>
   )
 }

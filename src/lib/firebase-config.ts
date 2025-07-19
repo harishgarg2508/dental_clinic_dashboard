@@ -1,27 +1,19 @@
+// lib/firebase.ts
+
 import { type FirebaseApp, getApps, getApp, initializeApp } from "firebase/app"
 import { getFirestore } from "firebase/firestore"
 import { getAuth } from "firebase/auth"
 
-/**
- * DO NOT expose these keys on the server in a public repo.
- * They are left here for demo-only.  Store them in env vars
- * (`NEXT_PUBLIC_` prefix) before going to production.
- */
 const firebaseConfig = {
-  apiKey: "AIzaSyDaQkNkqG3dwqU-nWltobC-YyiwQy6s6FQ",
-  authDomain: "patientdata-5fe9c.firebaseapp.com",
-  projectId: "patientdata-5fe9c",
-  storageBucket: "patientdata-5fe9c.firebasestorage.app",
-  messagingSenderId: "893013788176",
-  appId: "1:893013788176:web:c20c7fef07343dbb9f6c95",
-  measurementId: "G-ZC8WEEZW4D"
-};
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY!,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN!,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID!,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET!,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID!,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID!,
+  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID!,
+}
 
-/**
- * Returns the singleton Firebase **client-side** app.
- * Prevents “Firebase app already initialised” and
- * “Service firestore is not available” errors.
- */
 function getFirebaseApp(): FirebaseApp {
   if (!getApps().length) {
     return initializeApp(firebaseConfig)
@@ -29,15 +21,6 @@ function getFirebaseApp(): FirebaseApp {
   return getApp()
 }
 
-/* App & Services --------------------------------------------------------- */
 export const app = getFirebaseApp()
 export const db = getFirestore(app)
 export const auth = getAuth(app)
-
-/**
- * Analytics can only run in the browser.  Importing it on
- * the server leads to “window is not defined”.
- *
- *  import { getAnalytics } from "firebase/analytics"
- *  export const analytics = typeof window !== "undefined" ? getAnalytics(app) : null
- */

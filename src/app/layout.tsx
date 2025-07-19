@@ -21,18 +21,22 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={inter.className}>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+      <body className={`${inter.className} bg-gray-50 text-gray-900`}>
+        <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} disableTransitionOnChange>
           <SidebarProvider defaultOpen={false}>
             <AppSidebar />
             <SidebarInset>
-              <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
-                <SidebarTrigger className="-ml-1" />
+              {/* ✅ Green Navbar */}
+              <header className="flex h-16 shrink-0 items-center gap-2 px-4 bg-green-600 shadow-sm border-b border-green-700">
+                {/* ✅ Dark Icon + Border */}
+                <SidebarTrigger className="p-3 w-10 h-10 bg-white text-gray-800 border border-gray-300 rounded-md hover:bg-gray-100 hover:border-gray-400 transition" />
                 <div className="ml-4">
-                  <h1 className="text-xl font-semibold">Dental Clinic Management</h1>
+                  <h1 className="text-xl font-semibold text-white">Dental Clinic Management</h1>
                 </div>
               </header>
-              <div className="flex-1 space-y-4 p-8 pt-6">{children}</div>
+
+              {/* ✅ Main content area */}
+              <main className="flex-1 space-y-4 p-8 pt-6 bg-white">{children}</main>
             </SidebarInset>
           </SidebarProvider>
           <Toaster />
