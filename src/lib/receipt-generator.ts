@@ -567,10 +567,10 @@ export const generatePatientCompletePDF = async (patientData: any, treatmentsDat
 
 // Default clinic information - you can make this configurable
 export const defaultClinicInfo = {
-  name: "Smile Dental Clinic",
-  address: "123 Healthcare Street, Medical District, City 12345",
-  phone: "+1 (555) 123-4567",
-  email: "info@smiledentalclinic.com",
+  name: "Sunrise Dental Clinic",
+  address: "Gali No 7, Near Shishu Niketan School Nayagaon, Chandigarh, Punjab, 160103",
+  phone: "+7508574656",
+  email: "sunrisedental817@gmail.com",
 }
 
 // WhatsApp sharing functionality
