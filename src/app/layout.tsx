@@ -31,7 +31,7 @@ export default function RootLayout({
                 {/* ✅ Dark Icon + Border */}
                 <SidebarTrigger className="p-3 w-10 h-10 bg-white text-gray-800 border border-gray-300 rounded-md hover:bg-gray-100 hover:border-gray-400 transition" />
                 <div className="ml-4">
-                  <h1 className="text-xl font-semibold text-white">Dental Clinic Management</h1>
+                  <h1 className="text-xl font-semibold text-white">Sunrise Dental Clinic</h1>
                 </div>
               </header>
 

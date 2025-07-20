@@ -1,37 +1,38 @@
 interface ReceiptData {
   patient: {
-    id: string
-    name: string
-    phone: string
-    dob: string
-    gender: string
-  }
+    id: string;
+    name: string;
+    phone: string;
+    dob: string;
+    gender: string;
+  };
   treatment: {
-    id: string
-    entryDate: Date
-    diagnosis: string
-    treatmentPlan: string
-    toothNumber: string
-    totalAmount: number
-    amountPaid: number
-    balance: number
-    paymentStatus: string
-    tro?: Date // Next appointment date
-  }
+    id: string;
+    entryDate: Date;
+    diagnosis: string;
+    treatmentPlan: string;
+    toothNumber: string;
+    totalAmount: number;
+    amountPaid: number;
+    balance: number;
+    paymentStatus: string;
+    tro?: Date; // Next appointment date
+  };
   clinic: {
-    name: string
-    address: string
-    phone: string
-    email: string
-  }
+    name: string;
+    Doctor_name: string;
+    address: string;
+    phone: string;
+    email: string;
+  };
 }
 
 export const generateReceiptPDF = async (data: ReceiptData) => {
   // Create a new window for the receipt
-  const receiptWindow = window.open("", "_blank", "width=800,height=600")
+  const receiptWindow = window.open("", "_blank", "width=800,height=600");
 
   if (!receiptWindow) {
-    throw new Error("Unable to open receipt window. Please allow popups.")
+    throw new Error("Unable to open receipt window. Please allow popups.");
   }
 
   const receiptHTML = `
@@ -144,6 +145,25 @@ export const generateReceiptPDF = async (data: ReceiptData) => {
           font-weight: bold;
           font-size: 16px;
         }
+          .footer {
+  font-family: Arial, sans-serif;
+  font-size: 14px;
+  color: #333;
+  padding: 20px;
+  border-top: 1px solid #ccc;
+  margin-top: 30px;
+}
+
+.footer p {
+  margin: 6px 0;
+}
+
+.footer p:last-child {
+  font-style: italic;
+  color: #555;
+  margin-top: 20px;
+}
+
         .footer {
           margin-top: 40px;
           text-align: center;
@@ -200,7 +220,9 @@ export const generateReceiptPDF = async (data: ReceiptData) => {
         </div>
         <div class="info-row">
           <span class="info-label">Gender:</span>
-          <span class="info-value">${data.patient.gender || "Not specified"}</span>
+          <span class="info-value">${
+            data.patient.gender || "Not specified"
+          }</span>
         </div>
         <div class="info-row">
           <span class="info-label">Patient ID:</span>
@@ -254,15 +276,21 @@ export const generateReceiptPDF = async (data: ReceiptData) => {
         <div class="section-title">Financial Summary</div>
         <div class="info-row">
           <span class="info-label">Total Treatment Cost:</span>
-          <span class="info-value">$${data.treatment.totalAmount.toFixed(2)}</span>
+          <span class="info-value">₹${data.treatment.totalAmount.toFixed(
+            2
+          )}</span>
         </div>
         <div class="info-row">
           <span class="info-label">Amount Paid:</span>
-          <span class="info-value paid-amount">$${data.treatment.amountPaid.toFixed(2)}</span>
+          <span class="info-value paid-amount">₹${data.treatment.amountPaid.toFixed(
+            2
+          )}</span>
         </div>
         <div class="info-row">
           <span class="info-label">Outstanding Balance:</span>
-          <span class="info-value balance-amount">$${data.treatment.balance.toFixed(2)}</span>
+          <span class="info-value balance-amount">₹${data.treatment.balance.toFixed(
+            2
+          )}</span>
         </div>
         <div class="info-row total-row">
           <span class="info-label">Payment Status:</span>
@@ -271,8 +299,8 @@ export const generateReceiptPDF = async (data: ReceiptData) => {
               data.treatment.paymentStatus === "PAID"
                 ? "status-paid"
                 : data.treatment.paymentStatus === "UNPAID"
-                  ? "status-unpaid"
-                  : "status-partial"
+                ? "status-unpaid"
+                : "status-partial"
             }">
               ${data.treatment.paymentStatus}
             </span>
@@ -280,12 +308,37 @@ export const generateReceiptPDF = async (data: ReceiptData) => {
         </div>
       </div>
 
-      <div class="footer">
-        <p><strong>Thank you for choosing our dental clinic!</strong></p>
-        ${data.treatment.tro ? `<p><strong>Please remember your next appointment on ${data.treatment.tro.toLocaleDateString()}</strong></p>` : ""}
-        <p>For any queries regarding this receipt, please contact us at ${data.clinic.phone}</p>
-        <p>This is a computer-generated receipt and does not require a signature.</p>
-      </div>
+     <div class="footer" style="font-family: Arial, sans-serif; font-size: 14px; color: #333; padding: 20px; border-top: 1px solid #ccc; margin-top: 30px;">
+  <p><strong>Thank you for choosing our dental clinic!</strong></p>
+
+  ${
+    data.treatment.tro
+      ? `<p><strong>Please remember your next appointment on ${data.treatment.tro.toLocaleDateString()}</strong></p>`
+      : ""
+  }
+
+  <p>
+    For any queries regarding this receipt, please contact us at 
+    <strong>${data.clinic.phone}</strong>
+  </p>
+
+  <p>
+    Treated by: <strong>${data.clinic.Doctor_name}</strong>
+  </p>
+
+  <p>
+    Address: <strong>${data.clinic.address}</strong>
+  </p>
+
+  <p>
+    Email: <strong>${data.clinic.email}</strong>
+  </p>
+
+  <p style="margin-top: 20px; font-style: italic; color: #555;">
+    This is a computer-generated receipt and does not require a signature.
+  </p>
+</div>
+
 
       <script>
         // Auto-print when page loads
@@ -304,18 +357,21 @@ export const generateReceiptPDF = async (data: ReceiptData) => {
       </script>
     </body>
     </html>
-  `
+  `;
 
-  receiptWindow.document.write(receiptHTML)
-  receiptWindow.document.close()
-}
+  receiptWindow.document.write(receiptHTML);
+  receiptWindow.document.close();
+};
 
 // Generate comprehensive patient PDF with all treatment history
-export const generatePatientCompletePDF = async (patientData: any, treatmentsData: any[]) => {
-  const pdfWindow = window.open("", "_blank", "width=800,height=600")
+export const generatePatientCompletePDF = async (
+  patientData: any,
+  treatmentsData: any[]
+) => {
+  const pdfWindow = window.open("", "_blank", "width=800,height=600");
 
   if (!pdfWindow) {
-    throw new Error("Unable to open PDF window. Please allow popups.")
+    throw new Error("Unable to open PDF window. Please allow popups.");
   }
 
   const pdfHTML = `
@@ -446,7 +502,7 @@ export const generatePatientCompletePDF = async (patientData: any, treatmentsDat
       </div>
       
       <div class="header">
-        <div class="clinic-name">Smile Dental Clinic</div>
+        <div class="clinic-name">Sunrise Dental Clinic</div>
         <div>Complete Patient Medical Record</div>
       </div>
 
@@ -473,7 +529,9 @@ export const generatePatientCompletePDF = async (patientData: any, treatmentsDat
           </div>
           <div class="info-item">
             <span class="info-label">Gender:</span>
-            <span class="info-value">${patientData.gender || "Not specified"}</span>
+            <span class="info-value">${
+              patientData.gender || "Not specified"
+            }</span>
           </div>
           <div class="info-item">
             <span class="info-label">First Visit:</span>
@@ -486,22 +544,30 @@ export const generatePatientCompletePDF = async (patientData: any, treatmentsDat
         <div class="section-title">Financial Summary</div>
         <div class="summary-grid">
           <div class="summary-item">
-            <div class="summary-amount total">$${patientData.totalBilled.toFixed(2)}</div>
+            <div class="summary-amount total">₹${patientData.totalBilled.toFixed(
+              2
+            )}</div>
             <div>Total Billed</div>
           </div>
           <div class="summary-item">
-            <div class="summary-amount paid">$${patientData.totalPaid.toFixed(2)}</div>
+            <div class="summary-amount paid">₹${patientData.totalPaid.toFixed(
+              2
+            )}</div>
             <div>Total Paid</div>
           </div>
           <div class="summary-item">
-            <div class="summary-amount unpaid">$${patientData.outstandingBalance.toFixed(2)}</div>
+            <div class="summary-amount unpaid">₹${patientData.outstandingBalance.toFixed(
+              2
+            )}</div>
             <div>Outstanding Balance</div>
           </div>
         </div>
       </div>
 
       <div class="section">
-        <div class="section-title">Complete Treatment History (${treatmentsData.length} treatments)</div>
+        <div class="section-title">Complete Treatment History (${
+          treatmentsData.length
+        } treatments)</div>
         <table class="treatment-table">
           <thead>
             <tr>
@@ -525,13 +591,17 @@ export const generatePatientCompletePDF = async (patientData: any, treatmentsDat
                 <td>${treatment.diagnosis}</td>
                 <td>${treatment.treatmentPlan}</td>
                 <td>${treatment.toothNumber || "N/A"}</td>
-                <td>$${treatment.totalAmount.toFixed(2)}</td>
-                <td class="paid">$${treatment.amountPaid.toFixed(2)}</td>
-                <td class="${treatment.balance > 0 ? "unpaid" : "paid"}">$${treatment.balance.toFixed(2)}</td>
+                <td>₹${treatment.totalAmount.toFixed(2)}</td>
+                <td class="paid">₹${treatment.amountPaid.toFixed(2)}</td>
+                <td class="${
+                  treatment.balance > 0 ? "unpaid" : "paid"
+                }">₹${treatment.balance.toFixed(2)}</td>
                 <td>${treatment.paymentStatus}</td>
-                <td>${treatment.tro ? treatment.tro.toLocaleDateString() : "N/A"}</td>
+                <td>${
+                  treatment.tro ? treatment.tro.toLocaleDateString() : "N/A"
+                }</td>
               </tr>
-            `,
+            `
               )
               .join("")}
           </tbody>
@@ -541,7 +611,11 @@ export const generatePatientCompletePDF = async (patientData: any, treatmentsDat
       <div style="margin-top: 40px; text-align: center; font-size: 12px; color: #6b7280; border-top: 1px solid #e5e7eb; padding-top: 20px;">
         <p><strong>This is a complete patient medical record backup</strong></p>
         <p>Generated on ${new Date().toLocaleDateString()} for backup and reference purposes</p>
-        <p>Smile Dental Clinic - Phone: +1 (555) 123-4567</p>
+        <p>Sunrise Dental Clinic - Phone: +91 75085 74656, +91 89682 88817</p>
+        <p>Doctor: Dr. Suraj Sharma, Dr. Karuna Sharma</p>
+        <p>Address: Gali No 7, Near Shishu Niketan School, Nayagaon, Chandigarh, Punjab, 160103</p>
+        <p>Email: sunrisedental817@gmail.com</p>
+        <p>This is a computer-generated document and does not require a signature.</p>
       </div>
 
       <script>
@@ -559,74 +633,128 @@ export const generatePatientCompletePDF = async (patientData: any, treatmentsDat
       </script>
     </body>
     </html>
-  `
+  `;
 
-  pdfWindow.document.write(pdfHTML)
-  pdfWindow.document.close()
+  pdfWindow.document.write(pdfHTML);
+  pdfWindow.document.close();
+};
+// This interface defines the shape of the data required for the receipt.
+interface ReceiptData {
+  patient: {
+    id: string;
+    name: string;
+    phone: string;
+    dob: string;
+    gender: string;
+  };
+  treatment: {
+    id: string;
+    entryDate: Date;
+    diagnosis: string;
+    treatmentPlan: string;
+    toothNumber: string;
+    totalAmount: number;
+    amountPaid: number;
+    balance: number;
+    paymentStatus: string;
+    tro?: Date; // Next appointment date
+  };
+  doctorId?: string;
 }
 
-// Default clinic information - you can make this configurable
+// Default clinic information - this can be easily configured.
 export const defaultClinicInfo = {
   name: "Sunrise Dental Clinic",
-  address: "Gali No 7, Near Shishu Niketan School Nayagaon, Chandigarh, Punjab, 160103",
-  phone: "+7508574656",
+  Doctor_name: "Dr. Suraj Sharma, Dr. Karuna Sharma",
+  address:
+    "Gali No 7, Near Shishu Niketan School, Nayagaon, Chandigarh, Punjab, 160103",
+  phone: "‪+91 75085 74656 ‬+91 89682 88817",
   email: "sunrisedental817@gmail.com",
-}
+};
 
-// WhatsApp sharing functionality
-export const sendReceiptToWhatsApp = async (data: ReceiptData) => {
+/**
+ * Generates a beautifully formatted WhatsApp receipt and opens the WhatsApp share link.
+ * @param data - The receipt data containing patient and treatment information.
+ * @returns A promise that resolves to true on success, or throws an error on failure.
+ */
+export const sendReceiptToWhatsApp = async (
+  data: ReceiptData
+): Promise<boolean> => {
   try {
-    // Clean phone number (remove any non-digits except +)
-    let phoneNumber = data.patient.phone.replace(/[^\d+]/g, "")
+    // 1. Clean and format the patient's phone number for the WhatsApp URL.
+    let phoneNumber = data.patient.phone.replace(/[^\d+]/g, "");
 
-    // If phone doesn't start with +, assume it's a local number and add country code
+    // If the number doesn't start with a '+', assume it's an Indian number and add +91.
     if (!phoneNumber.startsWith("+")) {
-      // Add +1 for US/Canada, change this based on your location
-      phoneNumber = "+91" + phoneNumber
+      // Remove any leading 0 if present before adding country code
+      if (phoneNumber.startsWith("0")) {
+        phoneNumber = phoneNumber.substring(1);
+      }
+      phoneNumber = "+91" + phoneNumber;
     }
 
-    // Create WhatsApp message
-    const clinicName = data.clinic.name
-    const patientName = data.patient.name
-    const treatmentDate = data.treatment.entryDate.toLocaleDateString()
-    const diagnosis = data.treatment.diagnosis
-    const totalAmount = data.treatment.totalAmount.toFixed(2)
-    const amountPaid = data.treatment.amountPaid.toFixed(2)
-    const balance = data.treatment.balance.toFixed(2)
-    const nextAppointment = data.treatment.tro ? data.treatment.tro.toLocaleDateString() : "None scheduled"
+    // 2. Prepare the data for the message body.
+    const clinic = defaultClinicInfo;
+    const patientName = data.patient.name;
+    const treatmentDate = data.treatment.entryDate.toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+    const diagnosis = data.treatment.diagnosis;
+    const treatmentPlan = data.treatment.treatmentPlan;
+    const toothNumber = data.treatment.toothNumber;
+    const totalAmount = data.treatment.totalAmount.toFixed(2);
+    const amountPaid = data.treatment.amountPaid.toFixed(2);
+    const balance = data.treatment.balance.toFixed(2);
+    const paymentStatus = data.treatment.paymentStatus;
+    const nextAppointment = data.treatment.tro
+      ? data.treatment.tro.toLocaleDateString("en-IN", {
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+        })
+      : "None scheduled";
 
-    const message = `🦷 *${clinicName}* - Treatment Receipt
+    // 3. Construct the detailed and formatted WhatsApp message with emojis.
+    const message = `🦷 *${clinic.name}*
+_${clinic.address}_
 
 👤 *Patient:* ${patientName}
 📅 *Treatment Date:* ${treatmentDate}
 🔍 *Diagnosis:* ${diagnosis}
+📋 *Treatment Plan:* ${treatmentPlan}
+🦷 *Tooth No:* ${toothNumber}
 
-💰 *Financial Summary:*
-• Total Amount: $${totalAmount}
-• Amount Paid: $${amountPaid}
-• Balance: $${balance}
-• Status: ${data.treatment.paymentStatus}
+💰 *Payment Details:*
+• Total: ₹${totalAmount}
+• Paid: ₹${amountPaid}
+• Balance: ₹${balance}
+• Status: *${paymentStatus}*
 
-📅 *Next Appointment:* ${nextAppointment}
+🗓️ *Next Appointment:* ${nextAppointment}
+👨‍⚕️ *Treated By:* ${clinic.Doctor_name}
+📞 *Contact:* ${clinic.phone}
+📧 *Email:* ${clinic.email}
 
-Thank you for choosing ${clinicName}!
-For any queries, please contact us at ${data.clinic.phone}
+🙏 Thank you for trusting us with your smile!
+_${clinic.name}_`;
 
----
-This is an automated message from ${clinicName}`
+    // 4. Encode the message to be safely used in a URL.
+    const encodedMessage = encodeURIComponent(message);
 
-    // Encode message for URL
-    const encodedMessage = encodeURIComponent(message)
+    // 5. Create the WhatsApp URL and open it in a new tab.
+    // The .replace("+", "") is added to ensure compatibility with some systems.
+    const whatsappUrl = `https://wa.me/${phoneNumber.replace(
+      "+",
+      ""
+    )}?text=${encodedMessage}`;
+    window.open(whatsappUrl, "_blank");
 
-    // Create WhatsApp URL
-    const whatsappUrl = `https://wa.me/${phoneNumber.replace("+", "")}?text=${encodedMessage}`
-
-    // Open WhatsApp
-    window.open(whatsappUrl, "_blank")
-
-    return true
+    return true;
   } catch (error) {
-    console.error("Error sending to WhatsApp:", error)
-    throw new Error("Failed to send receipt to WhatsApp")
+    console.error("Error sending to WhatsApp:", error);
+    // Propagate the error to be handled by the calling function.
+    throw new Error("Failed to send receipt to WhatsApp");
   }
-}
+};
