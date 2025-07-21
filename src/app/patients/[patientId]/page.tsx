@@ -41,9 +41,9 @@ interface Patient {
   id: string
   name: string
   phone: string
-  dob: string
+  age: number
   gender: string
-  firstVisitDate: Date
+  firstVisitDate: Date // <-- CORRECT
   totalBilled: number
   totalPaid: number
   outstandingBalance: number
@@ -78,12 +78,13 @@ export default function PatientDetailPage() {
   const [addingTreatment, setAddingTreatment] = useState(false)
   const [updatingPayment, setUpdatingPayment] = useState(false)
 
-  const [newTreatment, setNewTreatment] = useState({
+ const [newTreatment, setNewTreatment] = useState({
     diagnosis: "",
     treatmentPlan: "",
     toothNumber: "",
     totalAmount: "",
     amountPaid: "",
+    entryDate:"", //new Date().toISOString().split("T")[0], // Default to today
     tro: "",
   })
 
@@ -134,7 +135,7 @@ export default function PatientDetailPage() {
     toast.success("Data refreshed successfully!")
   }
 
-  const handleAddTreatment = async (e: React.FormEvent) => {
+   const handleAddTreatment = async (e: React.FormEvent) => {
     e.preventDefault()
     setAddingTreatment(true)
 
@@ -143,7 +144,6 @@ export default function PatientDetailPage() {
       console.log(`👤 Target Patient ID: "${patientId}"`)
       console.log(`🏥 Form data:`, newTreatment)
 
-      // Validation
       const totalAmount = Number.parseFloat(newTreatment.totalAmount)
       const amountPaid = Number.parseFloat(newTreatment.amountPaid) || 0
 
@@ -162,28 +162,24 @@ export default function PatientDetailPage() {
         return
       }
 
-      // Prepare treatment data
       const treatmentData = {
         diagnosis: newTreatment.diagnosis.trim(),
         treatmentPlan: newTreatment.treatmentPlan.trim(),
         toothNumber: newTreatment.toothNumber.trim(),
         totalAmount,
         amountPaid,
+        entryDate: new Date(newTreatment.entryDate), // Use the specified entry date
         tro: newTreatment.tro ? new Date(newTreatment.tro) : undefined,
       }
 
       console.log(`🏥 Prepared treatment data:`, treatmentData)
-
-      // ⚠️ CRITICAL: Use addTreatmentToPatient for existing patients
       console.log(`🏥 Calling addTreatmentToPatient with patientId: "${patientId}"`)
       const treatmentId = await addTreatmentToPatient(patientId, treatmentData)
       console.log(`✅ Treatment added with ID: ${treatmentId}`)
 
-      // Reload data to show the new treatment
       console.log(`🔄 Reloading patient data after treatment addition...`)
       await loadPatientData()
 
-      // Reset form and close dialog
       setShowAddTreatment(false)
       setNewTreatment({
         diagnosis: "",
@@ -191,6 +187,7 @@ export default function PatientDetailPage() {
         toothNumber: "",
         totalAmount: "",
         amountPaid: "",
+        entryDate:"",// new Date().toISOString().split("T")[0],
         tro: "",
       })
 
@@ -204,7 +201,6 @@ export default function PatientDetailPage() {
       setAddingTreatment(false)
     }
   }
-
   const handleUpdatePayment = async (e: React.FormEvent) => {
     e.preventDefault()
     setUpdatingPayment(true)
@@ -251,10 +247,10 @@ export default function PatientDetailPage() {
     setShowEditPayment(true)
   }
 
-  const calculateAge = (dob: string) => {
-    if (!dob) return "N/A"
-    return differenceInYears(new Date(), new Date(dob))
-  }
+  // const calculateAge = (dob: string) => {
+  //   if (!dob) return "N/A"
+  //   return differenceInYears(new Date(), new Date(dob))
+  // }
 
   const handleGenerateReceipt = async (treatment: Treatment) => {
     try {
@@ -265,7 +261,7 @@ export default function PatientDetailPage() {
           id: patient.id,
           name: patient.name,
           phone: patient.phone,
-          dob: patient.dob,
+          age: patient.age,
           gender: patient.gender,
         },
         treatment: {
@@ -300,7 +296,9 @@ export default function PatientDetailPage() {
       toast.error("Failed to export complete record. Please try again.")
     }
   }
-
+  
+  // --- MODIFIED FUNCTION ---
+  // Passes `patient.age` instead of `patient.dob`
   const handleSendToWhatsApp = async (treatment: Treatment) => {
     try {
       if (!patient) return
@@ -310,7 +308,7 @@ export default function PatientDetailPage() {
           id: patient.id,
           name: patient.name,
           phone: patient.phone,
-          dob: patient.dob,
+          age: patient.age,
           gender: patient.gender,
         },
         treatment: {
@@ -438,33 +436,34 @@ export default function PatientDetailPage() {
       </div>
 
     <div className="grid gap-8 md:grid-cols-3">
-  {/* Patient Information Card */}
-  <Card className="bg-white dark:bg-slate-700 transform transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl rounded-xl shadow-lg border border-slate-200 dark:border-slate-800 cursor-pointer">
-    <CardHeader>
-      <CardTitle className="flex items-center text-xl font-extrabold text-slate-900 dark:text-slate-100">
-        <User className="mr-3 h-6 w-6 text-blue-500" />
-        Patient Information
-      </CardTitle>
-    </CardHeader>
-    <CardContent className="space-y-4 text-base">
-      <div className="flex items-center space-x-3">
-        <Phone className="h-5 w-5 text-slate-500 dark:text-slate-400" />
-        <span className="font-semibold text-slate-700 dark:text-slate-300">{patient.phone}</span>
-      </div>
-      <div className="flex items-center space-x-3">
-        <Calendar className="h-5 w-5 text-slate-500 dark:text-slate-400" />
-        <span className="font-semibold text-slate-700 dark:text-slate-300">Age: {calculateAge(patient.dob)} years</span>
-      </div>
-      <div>
-        <span className="font-medium text-slate-600 dark:text-slate-400">Gender: </span>
-        <span className="font-bold text-slate-800 dark:text-slate-200">{patient.gender || "Not specified"}</span>
-      </div>
-      <div>
-        <span className="font-medium text-slate-600 dark:text-slate-400">First Visit: </span>
-        <span className="font-bold text-slate-800 dark:text-slate-200">{format(patient.firstVisitDate, "MMM dd, yyyy")}</span>
-      </div>
-    </CardContent>
-  </Card>
+  {/* --- MODIFIED CARD --- */}
+{/* Displays `patient.age` directly */}
+<Card className="bg-white dark:bg-slate-800 transform transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl rounded-xl shadow-lg border border-slate-200 dark:border-slate-700">
+  <CardHeader>
+    <CardTitle className="flex items-center text-xl font-extrabold text-slate-900 dark:text-slate-100">
+      <User className="mr-3 h-6 w-6 text-blue-500" />
+      Patient Information
+    </CardTitle>
+  </CardHeader>
+  <CardContent className="space-y-4 text-base">
+    <div className="flex items-center space-x-3">
+      <Phone className="h-5 w-5 text-slate-500 dark:text-slate-400" />
+      <span className="font-semibold text-slate-700 dark:text-slate-300">{patient.phone}</span>
+    </div>
+    <div className="flex items-center space-x-3">
+      <Calendar className="h-5 w-5 text-slate-500 dark:text-slate-400" />
+      <span className="font-semibold text-slate-700 dark:text-slate-300">Age: {patient.age} years</span>
+    </div>
+    <div>
+      <span className="font-medium text-slate-600 dark:text-slate-400">Gender: </span>
+      <span className="font-bold text-slate-800 dark:text-slate-200">{patient.gender || "Not specified"}</span>
+    </div>
+    <div>
+      <span className="font-medium text-slate-600 dark:text-slate-400">First Visit: </span>
+      <span className="font-bold text-slate-800 dark:text-slate-200">{format(patient.firstVisitDate, "MMM dd, yyyy")}</span>
+    </div>
+  </CardContent>
+</Card>
 
   {/* Financial Summary Card */}
   <Card className="bg-white dark:bg-slate-700 transform transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl rounded-xl shadow-lg border border-slate-200 dark:border-slate-800 cursor-pointer">
@@ -674,7 +673,6 @@ export default function PatientDetailPage() {
 
     <form onSubmit={handleAddTreatment}>
       <div className="grid gap-6 py-4">
-        {/* Input fields with improved styling */}
         <div className="space-y-2">
           <Label htmlFor="diagnosis" className="font-medium text-slate-700 dark:text-slate-300">
             Diagnosis *
@@ -704,6 +702,20 @@ export default function PatientDetailPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
+            <Label htmlFor="entryDate" className="font-medium text-slate-700 dark:text-slate-300">
+              Entry Date *
+            </Label>
+            <Input
+              id="entryDate"
+              type="date"
+              value={newTreatment.entryDate}
+              onChange={(e) => setNewTreatment((prev) => ({ ...prev, entryDate: e.target.value }))}
+              required
+              className="bg-slate-50 border-slate-300 text-slate-900 focus:ring-2 focus:ring-blue-500 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-50 dark:focus:ring-blue-600"
+            />
+          </div>
+
+          <div className="space-y-2">
             <Label htmlFor="toothNumber" className="font-medium text-slate-700 dark:text-slate-300">
               Tooth Number
             </Label>
@@ -715,21 +727,23 @@ export default function PatientDetailPage() {
               className="bg-slate-50 border-slate-300 text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-50 dark:placeholder:text-slate-500 dark:focus:ring-blue-600"
             />
           </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="tro" className="font-medium text-slate-700 dark:text-slate-300 flex items-center gap-2">
-              <Calendar className="h-4 w-4 text-slate-500" />
-              Next Appointment (TRO)
-            </Label>
-            <Input
-              id="tro"
-              type="date"
-              value={newTreatment.tro}
-              onChange={(e) => setNewTreatment((prev) => ({ ...prev, tro: e.target.value }))}
-              min={new Date().toISOString().split('T')[0]}
-              className="bg-slate-50 border-slate-300 text-slate-900 focus:ring-2 focus:ring-blue-500 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-50 dark:focus:ring-blue-600"
-            />
-          </div>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <Label htmlFor="tro" className="font-medium text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                <Calendar className="h-4 w-4 text-slate-500" />
+                Next Appointment (TRO)
+              </Label>
+              <Input
+                id="tro"
+                type="date"
+                value={newTreatment.tro}
+                onChange={(e) => setNewTreatment((prev) => ({ ...prev, tro: e.target.value }))}
+                min={new Date().toISOString().split('T')[0]}
+                className="bg-slate-50 border-slate-300 text-slate-900 focus:ring-2 focus:ring-blue-500 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-50 dark:focus:ring-blue-600"
+              />
+            </div>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
@@ -749,7 +763,6 @@ export default function PatientDetailPage() {
               className="bg-slate-50 border-slate-300 text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-50 dark:placeholder:text-slate-500 dark:focus:ring-blue-600"
             />
           </div>
-
           <div className="space-y-2">
             <Label htmlFor="amountPaid" className="font-medium text-slate-700 dark:text-slate-300">
               Amount Paid
@@ -767,7 +780,6 @@ export default function PatientDetailPage() {
           </div>
         </div>
 
-        {/* Financial Summary Box */}
         <div className="p-4 bg-slate-100 dark:bg-slate-800 rounded-lg">
           <div className="text-sm space-y-2">
             <div className="flex justify-between">
@@ -799,13 +811,7 @@ export default function PatientDetailPage() {
       </div>
 
       <DialogFooter className="mt-4">
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => setShowAddTreatment(false)}
-          disabled={addingTreatment}
-          className="dark:text-slate-300 dark:border-slate-600 dark:hover:bg-slate-800"
-        >
+        <Button type="button" variant="outline" onClick={() => setShowAddTreatment(false)} disabled={addingTreatment} className="dark:text-slate-300 dark:border-slate-600 dark:hover:bg-slate-800">
           Cancel
         </Button>
         <Button type="submit" disabled={addingTreatment} className="bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50">

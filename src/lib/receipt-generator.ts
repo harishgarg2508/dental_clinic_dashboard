@@ -1,10 +1,10 @@
 interface ReceiptData {
-  patient: {
-    id: string;
-    name: string;
-    phone: string;
-    dob: string;
-    gender: string;
+ patient: {
+   id: string;
+  name: string;
+  phone: string;
+  age: string | number; // <-- Changed from dob
+  gender: string;
   };
   treatment: {
     id: string;
@@ -145,6 +145,10 @@ export const generateReceiptPDF = async (data: ReceiptData) => {
           font-weight: bold;
           font-size: 16px;
         }
+           .appointment-section {
+           break-inside: avoid;
+            page-break-inside: avoid;
+            }
           .footer {
   font-family: Arial, sans-serif;
   font-size: 14px;
@@ -214,9 +218,9 @@ export const generateReceiptPDF = async (data: ReceiptData) => {
           <span class="info-label">Phone Number:</span>
           <span class="info-value">${data.patient.phone}</span>
         </div>
-        <div class="info-row">
-          <span class="info-label">Date of Birth:</span>
-          <span class="info-value">${data.patient.dob || "Not provided"}</span>
+       <div class="info-row">
+          <span class="info-label">Age:</span>
+          <span class="info-value">${data.patient.age}</span>
         </div>
         <div class="info-row">
           <span class="info-label">Gender:</span>
@@ -336,6 +340,9 @@ export const generateReceiptPDF = async (data: ReceiptData) => {
 
   <p style="margin-top: 20px; font-style: italic; color: #555;">
     This is a computer-generated receipt and does not require a signature.
+  </p>
+  <p style="margin-top: 20px; font-style: italic; color: #555;">
+    This receipt is for your personal records only and is not intended for official insurance, tax, or legal claims.
   </p>
 </div>
 
@@ -502,7 +509,7 @@ export const generatePatientCompletePDF = async (
       </div>
       
       <div class="header">
-        <div class="clinic-name">Sunrise Dental Clinic</div>
+        <div class="clinic-name">Sunrise Dental Clinic and Implant Centre </div>
         <div>Complete Patient Medical Record</div>
       </div>
 
@@ -524,8 +531,10 @@ export const generatePatientCompletePDF = async (
             <span class="info-value">${patientData.phone}</span>
           </div>
           <div class="info-item">
-            <span class="info-label">Date of Birth:</span>
-            <span class="info-value">${patientData.dob || "Not provided"}</span>
+            <span class="info-label">Age:</span>
+            <span class="info-value">
+              ${patientData.age ? `${patientData.age} years` : "Not provided"}
+            </span>
           </div>
           <div class="info-item">
             <span class="info-label">Gender:</span>
@@ -611,11 +620,14 @@ export const generatePatientCompletePDF = async (
       <div style="margin-top: 40px; text-align: center; font-size: 12px; color: #6b7280; border-top: 1px solid #e5e7eb; padding-top: 20px;">
         <p><strong>This is a complete patient medical record backup</strong></p>
         <p>Generated on ${new Date().toLocaleDateString()} for backup and reference purposes</p>
-        <p>Sunrise Dental Clinic - Phone: +91 75085 74656, +91 89682 88817</p>
+        <p>Sunrise Dental Clinic and Implant Centre  - Phone: +91 75085 74656, +91 89682 88817</p>
         <p>Doctor: Dr. Suraj Sharma, Dr. Karuna Sharma</p>
         <p>Address: Gali No 7, Near Shishu Niketan School, Nayagaon, Chandigarh, Punjab, 160103</p>
         <p>Email: sunrisedental817@gmail.com</p>
         <p>This is a computer-generated document and does not require a signature.</p>
+        <p style="margin-top: 20px; font-style: italic; color: #555;">
+          This document is for your personal records only and is not intended for official insurance, tax, or legal claims.
+        </p>
       </div>
 
       <script>
@@ -644,7 +656,7 @@ interface ReceiptData {
     id: string;
     name: string;
     phone: string;
-    dob: string;
+    age: number | string;
     gender: string;
   };
   treatment: {
@@ -664,11 +676,12 @@ interface ReceiptData {
 
 // Default clinic information - this can be easily configured.
 export const defaultClinicInfo = {
-  name: "Sunrise Dental Clinic",
+  name: "Sunrise Dental Clinic and Implant Centre ",
   Doctor_name: "Dr. Suraj Sharma, Dr. Karuna Sharma",
   address:
     "Gali No 7, Near Shishu Niketan School, Nayagaon, Chandigarh, Punjab, 160103",
   phone: "‪+91 75085 74656 ‬+91 89682 88817",
+
   email: "sunrisedental817@gmail.com",
 };
 

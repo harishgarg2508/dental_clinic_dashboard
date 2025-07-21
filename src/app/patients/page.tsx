@@ -23,7 +23,7 @@ interface Patient {
   id: string
   name: string
   phone: string
-  dob: string
+  age: number | string
   gender: string
   firstVisitDate: Date
   totalBilled: number
@@ -61,7 +61,8 @@ export default function PatientsPage() {
 
   useEffect(() => {
     const applyFilters = async () => {
-      console.log("🔍 Applying filters...")
+      console.log("Applying filters...")
+
       let filtered = patients
 
       // Search filter
@@ -83,8 +84,8 @@ export default function PatientsPage() {
       // Age filter
       if (ageFilter !== "all") {
         filtered = filtered.filter((patient) => {
-          if (!patient.dob) return false
-          const age = differenceInYears(new Date(), new Date(patient.dob))
+          if (!patient.age) return false
+          const age = Number(patient.age) // Convert age to number for comparison
 
           switch (ageFilter) {
             case "child":
@@ -106,7 +107,7 @@ export default function PatientsPage() {
         filtered = filtered.filter((p) => appointmentPatientIds.has(p.id))
       }
 
-      console.log(`🔍 Filtered to ${filtered.length} patients`)
+      console.log(`Filtered to ${filtered.length} patients`)
       setFilteredPatients(filtered)
     }
 
@@ -118,7 +119,7 @@ export default function PatientsPage() {
       // Convert patients to treatment-like format for export
       const treatments = await getAllTreatments()
       const patientTreatments = treatments.filter((t) => filteredPatients.some((p) => p.id === t.patientId))
-      await exportToExcel(patientTreatments, "patients-export")
+      await exportToExcel()
       toast.success("Patient data exported successfully!")
     } catch (error) {
       console.error("Error exporting data:", error)
@@ -126,10 +127,7 @@ export default function PatientsPage() {
     }
   }
 
-  const calculateAge = (dob: string) => {
-    if (!dob) return "N/A"
-    return differenceInYears(new Date(), new Date(dob))
-  }
+ 
 
   const getPaymentStatus = (patient: Patient) => {
     if (patient.outstandingBalance <= 0) return "PAID"
@@ -336,33 +334,52 @@ export default function PatientsPage() {
                 </TableHeader>
                 <TableBody>
                   {filteredPatients.map((patient) => (
-                    <TableRow key={patient.id} className="hover:bg-slate-50 border-slate-200">
-                      <TableCell className="font-medium">
-                        <div className="flex items-center space-x-2">
-                          <User className="h-4 w-4 text-slate-400" />
-                          <span className="text-slate-800">{patient.name}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center space-x-2">
-                          <Phone className="h-4 w-4 text-slate-400" />
-                          <span className="text-slate-600">{patient.phone}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-slate-600">{calculateAge(patient.dob)} years</TableCell>
-                      <TableCell className="text-slate-600">{patient.gender || "N/A"}</TableCell>
-                      <TableCell className="text-slate-600">{format(patient.firstVisitDate, "MMM dd, yyyy")}</TableCell>
-                      <TableCell className="font-semibold text-slate-800">₹{patient.totalBilled.toFixed(2)}</TableCell>
-                      <TableCell className="text-green-600 font-semibold">₹{patient.totalPaid.toFixed(2)}</TableCell>
-                      <TableCell className={patient.outstandingBalance > 0 ? "text-red-600 font-semibold" : "text-green-600 font-semibold"}>
-                        ₹{patient.outstandingBalance.toFixed(2)}
-                      </TableCell>
-                      <TableCell>
-                        {/* Corrected: Using className for explicit, high-contrast badge colors */}
-                        <Badge className={getPaymentStatusClasses(getPaymentStatus(patient))}>
-                          {getPaymentStatus(patient).replace("_", " ")}
-                        </Badge>
-                      </TableCell>
+                      <TableRow key={patient.id} className="hover:bg-slate-50 border-slate-200">
+                        <TableCell className="font-medium">
+                          <div className="flex items-center space-x-2">
+                            <User className="h-4 w-4 text-slate-400" />
+                            <span className="text-slate-800">{patient.name}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center space-x-2">
+                            <Phone className="h-4 w-4 text-slate-400" />
+                            <span className="text-slate-600">{patient.phone}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-slate-600">
+                          {patient.age ? `${patient.age} years` : "N/A"}
+                        </TableCell>
+                        <TableCell className="text-slate-600">
+                          {patient.gender || "N/A"}
+                        </TableCell>
+                        <TableCell className="text-slate-600">
+                          {format(patient.firstVisitDate, "MMM dd, yyyy")}
+                        </TableCell>
+                        <TableCell className="font-semibold text-slate-800">
+                          ₹{patient.totalBilled.toFixed(2)}
+                        </TableCell>
+                        <TableCell className="text-green-600 font-semibold">
+                          ₹{patient.totalPaid.toFixed(2)}
+                        </TableCell>
+                        <TableCell
+                          className={
+                            patient.outstandingBalance > 0
+                              ? "text-red-600 font-semibold"
+                              : "text-green-600 font-semibold"
+                          }
+                        >
+                          ₹{patient.outstandingBalance.toFixed(2)}
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            className={getPaymentStatusClasses(
+                              getPaymentStatus(patient)
+                            )}
+                          >
+                            {getPaymentStatus(patient).replace("_", " ")}
+                          </Badge>
+                        </TableCell>
                       <TableCell>
                         <Button asChild variant="outline" size="sm" className="border-blue-300 text-blue-700 hover:bg-blue-50">
                           <Link href={`/patients/${patient.id}`}>

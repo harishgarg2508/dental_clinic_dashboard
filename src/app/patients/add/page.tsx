@@ -21,8 +21,9 @@ export default function AddPatientPage() {
     // Patient data
     name: "",
     phone: "",
-    dob: "",
+    age: "", // <-- Replaced dob with age
     gender: "",
+    entryDate: "",  //new Date().toISOString().split("T")[0], // <-- Added entryDate
 
     // Treatment data
     diagnosis: "",
@@ -33,7 +34,6 @@ export default function AddPatientPage() {
     tro: "", // Treatment Repeat On - next appointment date
   })
 
-  // --- NO CHANGES TO ANY LOGIC ---
   const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({
       ...prev,
@@ -48,6 +48,12 @@ export default function AddPatientPage() {
     try {
       if (!formData.name || !formData.phone || !formData.diagnosis || !formData.totalAmount) {
         toast.error("Please fill in all required fields")
+        setLoading(false)
+        return
+      }
+
+       if (!formData.entryDate) {
+        toast.error("Please select an entry date")
         setLoading(false)
         return
       }
@@ -70,7 +76,7 @@ export default function AddPatientPage() {
       const patientData = {
         name: formData.name,
         phone: formData.phone,
-        dob: formData.dob,
+        age: Number(formData.age) || 0, // <-- Convert string to number here
         gender: formData.gender,
       }
 
@@ -80,6 +86,7 @@ export default function AddPatientPage() {
         toothNumber: formData.toothNumber,
         totalAmount,
         amountPaid,
+        entryDate: new Date(formData.entryDate), // <-- Use entryDate
         tro: formData.tro ? new Date(formData.tro) : undefined,
       }
 
@@ -94,7 +101,6 @@ export default function AddPatientPage() {
       setLoading(false)
     }
   }
-  // --- END OF UNCHANGED LOGIC ---
 
   // Consistent input styling for a clean look
   const inputStyle = "bg-white border-gray-300 focus:ring-2 focus:ring-teal-400 focus:border-teal-400"
@@ -105,7 +111,7 @@ export default function AddPatientPage() {
       <div className="max-w-6xl mx-auto space-y-6">
         <div className="flex items-center justify-between">
           <h2 className="text-3xl font-bold tracking-tight text-gray-800">Add New Patient</h2>
-          <Button asChild variant="outline" size="sm" className="bg-blue-500 hover:bg-gray-100">
+          <Button asChild variant="outline" size="sm" className="bg-white hover:bg-gray-100">
             <Link href="/patients">
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back to Patients
@@ -122,6 +128,21 @@ export default function AddPatientPage() {
                 <CardDescription>Basic demographic information about the patient</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="entryDate" className={labelStyle}>
+                    Entry Date <span className="text-red-500">*</span>
+                  </Label>
+                  <Input
+                    id="entryDate"
+                    type="date"
+                    value={formData.entryDate}
+                    onChange={(e) => handleInputChange("entryDate", e.target.value)}
+                    required
+                    className={inputStyle}
+                  />
+                  <p className="text-xs text-gray-500">Use today's date or specify a date for historical records.</p>
+                </div>
+
                 <div className="space-y-2">
                   <Label htmlFor="name" className={labelStyle}>
                     Full Name <span className="text-red-500">*</span>
@@ -151,14 +172,15 @@ export default function AddPatientPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="dob" className={labelStyle}>
-                    Date of Birth
+                  <Label htmlFor="age" className={labelStyle}>
+                    Age
                   </Label>
                   <Input
-                    id="dob"
-                    type="date"
-                    value={formData.dob}
-                    onChange={(e) => handleInputChange("dob", e.target.value)}
+                    id="age"
+                    type="number"
+                    value={formData.age}
+                    onChange={(e) => handleInputChange("age", e.target.value)}
+                    placeholder="Enter patient's age in years"
                     className={inputStyle}
                   />
                 </div>
@@ -241,9 +263,7 @@ export default function AddPatientPage() {
                     min={new Date().toISOString().split("T")[0]}
                     className={inputStyle}
                   />
-                  <p className="text-xs text-gray-500">
-                    Leave empty for one-day treatments that don't require follow-up
-                  </p>
+                  <p className="text-xs text-gray-500">Leave empty if no follow-up is required.</p>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
@@ -286,42 +306,42 @@ export default function AddPatientPage() {
                     <div className="flex justify-between">
                       <span>Total Amount:</span>
                       <span className="font-medium text-gray-800">
-                        ${Number.parseFloat(formData.totalAmount || "0").toFixed(2)}
+                        ₹{Number.parseFloat(formData.totalAmount || "0").toFixed(2)}
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span>Amount Paid:</span>
                       <span className="font-medium text-gray-800">
-                        ${Number.parseFloat(formData.amountPaid || "0").toFixed(2)}
+                        ₹{Number.parseFloat(formData.amountPaid || "0").toFixed(2)}
                       </span>
                     </div>
-                  </div>
-                  <div className="flex justify-between font-medium border-t border-gray-200 pt-2 text-sm">
-                    <span>Balance:</span>
-                    <span
-                      className={
-                        Number.parseFloat(formData.totalAmount || "0") -
-                          Number.parseFloat(formData.amountPaid || "0") >
-                        0
-                          ? "text-red-600 font-bold"
-                          : "text-green-600 font-bold"
-                      }
-                    >
-                      $
-                      {(
-                        Number.parseFloat(formData.totalAmount || "0") -
-                        Number.parseFloat(formData.amountPaid || "0")
-                      ).toFixed(2)}
-                    </span>
-                  </div>
-                  {formData.tro && (
-                    <div className="flex justify-between mt-2 pt-2 border-t border-gray-200 text-sm">
-                      <span className="text-teal-700 font-medium">Next Appointment:</span>
-                      <span className="text-teal-700 font-bold">
-                        {new Date(formData.tro).toLocaleDateString()}
+                    <div className="flex justify-between">
+                      <span>Balance:</span>
+                      <span
+                        className={
+                          Number.parseFloat(formData.totalAmount || "0") -
+                            Number.parseFloat(formData.amountPaid || "0") >
+                          0
+                            ? "text-red-600 font-bold"
+                            : "text-green-600 font-bold"
+                        }
+                      >
+                        ₹
+                        {(
+                          Number.parseFloat(formData.totalAmount || "0") -
+                            Number.parseFloat(formData.amountPaid || "0")
+                        ).toFixed(2)}
                       </span>
                     </div>
-                  )}
+                    {formData.tro && (
+                      <div className="flex justify-between mt-2 pt-2 border-t border-gray-200 text-sm">
+                        <span className="text-teal-700 font-medium">Next Appointment:</span>
+                        <span className="text-teal-700 font-bold">
+                          {new Date(formData.tro).toLocaleDateString()}
+                        </span>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </CardContent>
             </Card>

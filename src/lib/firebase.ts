@@ -55,7 +55,7 @@ export interface Patient {
   id: string
   name: string
   phone: string
-  dob: string
+  age: number
   gender: string
   firstVisitDate: Date
   totalBilled: number
@@ -113,33 +113,28 @@ const logError = (functionName: string, error: any) => {
 
 // ==================== STEP 1: CREATE NEW PATIENT WITH FIRST TREATMENT ====================
 export const addNewPatientWithTreatment = async (
-  patientData: Omit<
-    Patient,
-    "id" | "firstVisitDate" | "totalBilled" | "totalPaid" | "outstandingBalance" | "createdAt" | "updatedAt"
-  >,
-  treatmentData: Omit<
-    Treatment,
-    "id" | "patientId" | "patientName" | "entryDate" | "balance" | "paymentStatus" | "createdAt" | "updatedAt"
-  >,
+  patientData: Omit<Patient, "id" | "firstVisitDate" | "totalBilled" | "totalPaid" | "outstandingBalance" | "createdAt" | "updatedAt">,
+  treatmentData: Omit<Treatment, "id" | "patientId" | "patientName" | "balance" | "paymentStatus" | "createdAt" | "updatedAt">,
 ) => {
   try {
-    console.log("🆕 ===== CREATING NEW PATIENT WITH FIRST TREATMENT =====")
-    console.log("👤 Patient data:", patientData)
-    console.log("🏥 Treatment data:", treatmentData)
+    console.log(" ===== CREATING NEW PATIENT WITH FIRST TREATMENT =====")
+    console.log(" Patient data:", patientData)
+    console.log(" Treatment data:", treatmentData)
 
     const now = Timestamp.now()
+    const entryTimestamp = Timestamp.fromDate(treatmentData.entryDate)
 
     // Calculate treatment financials
     const balance = treatmentData.totalAmount - treatmentData.amountPaid
     const paymentStatus: Treatment["paymentStatus"] =
       balance <= 0 ? "PAID" : treatmentData.amountPaid > 0 ? "PARTIALLY_PAID" : "UNPAID"
 
-    console.log(`💰 Calculated: Balance=$${balance}, Status=${paymentStatus}`)
+    console.log(` Calculated: Balance=₹${balance}, Status=${paymentStatus}`)
 
     // STEP 1: Create patient document
     const newPatient = {
       ...patientData,
-      firstVisitDate: now,
+      firstVisitDate: entryTimestamp,
       totalBilled: treatmentData.totalAmount,
       totalPaid: treatmentData.amountPaid,
       outstandingBalance: balance,
@@ -147,17 +142,17 @@ export const addNewPatientWithTreatment = async (
       updatedAt: now,
     }
 
-    console.log("👤 Creating patient document...")
+    console.log(" Creating patient document...")
     const patientRef = await addDoc(collection(db, PATIENTS_COLLECTION), newPatient)
     const patientId = patientRef.id
-    console.log(`✅ Patient created with ID: ${patientId}`)
+    console.log(` Patient created with ID: ${patientId}`)
 
     // STEP 2: Create treatment document
     const newTreatment = {
       ...treatmentData,
-      patientId: patientId, // Link to the patient we just created
+      patientId: patientId,
       patientName: patientData.name,
-      entryDate: now,
+      entryDate: entryTimestamp,
       balance,
       paymentStatus,
       tro: treatmentData.tro ? Timestamp.fromDate(treatmentData.tro) : null,
@@ -165,14 +160,14 @@ export const addNewPatientWithTreatment = async (
       updatedAt: now,
     }
 
-    console.log("🏥 Creating treatment document...")
+    console.log(" Creating treatment document...")
     const treatmentRef = await addDoc(collection(db, TREATMENTS_COLLECTION), newTreatment)
-    console.log(`✅ Treatment created with ID: ${treatmentRef.id}`)
+    console.log(` Treatment created with ID: ${treatmentRef.id}`)
 
-    console.log("🎉 ===== NEW PATIENT CREATION COMPLETED =====")
+    console.log(" ===== NEW PATIENT CREATION COMPLETED =====")
     return patientId
   } catch (error) {
-    console.error("❌ ===== NEW PATIENT CREATION FAILED =====")
+    console.error(" ===== NEW PATIENT CREATION FAILED =====")
     logError("addNewPatientWithTreatment", error)
     throw error
   }
@@ -183,98 +178,58 @@ export const addTreatmentToPatient = async (
   patientId: string,
   treatmentData: Omit<
     Treatment,
-    "id" | "patientId" | "patientName" | "entryDate" | "balance" | "paymentStatus" | "createdAt" | "updatedAt"
-  >,
+    "id" | "patientId" | "patientName" | "balance" | "paymentStatus" | "createdAt" | "updatedAt"
+  >, // <-- MODIFIED: Removed "entryDate" from Omit
 ) => {
   try {
     console.log("➕ ===== ADDING TREATMENT TO EXISTING PATIENT =====")
     console.log(`👤 Target Patient ID: "${patientId}"`)
     console.log("🏥 Treatment data:", treatmentData)
 
-    // Validation
     if (!patientId || patientId.trim() === "") {
       throw new Error("Patient ID is required and cannot be empty")
     }
 
-    const now = Timestamp.now()
-
-    // STEP 1: Verify patient exists and get patient data
+    // STEP 1: Verify patient exists
     console.log("🔍 STEP 1: Verifying patient exists...")
     const patientRef = doc(db, PATIENTS_COLLECTION, patientId)
     const patientSnap = await getDoc(patientRef)
-
     if (!patientSnap.exists()) {
-      console.error(`❌ Patient with ID "${patientId}" not found`)
       throw new Error(`Patient not found with ID: ${patientId}`)
     }
-
     const patientData = patientSnap.data()
     console.log(`✅ Patient found: "${patientData.name}"`)
 
     // STEP 2: Calculate treatment financials
-    console.log("🔍 STEP 2: Calculating treatment financials...")
+    const now = Timestamp.now()
+    const entryTimestamp = Timestamp.fromDate(treatmentData.entryDate)
     const balance = treatmentData.totalAmount - treatmentData.amountPaid
     const paymentStatus: Treatment["paymentStatus"] =
       balance <= 0 ? "PAID" : treatmentData.amountPaid > 0 ? "PARTIALLY_PAID" : "UNPAID"
 
-    console.log(`💰 Calculated: Balance=$${balance}, Status=${paymentStatus}`)
-
-    // STEP 3: Create treatment document with EXISTING patient ID
-    console.log("🔍 STEP 3: Creating treatment document...")
+    // STEP 3: Create treatment document
     const newTreatment = {
       ...treatmentData,
-      patientId: patientId, // ⚠️ CRITICAL: Use the EXISTING patient ID
+      patientId: patientId,
       patientName: patientData.name,
-      entryDate: now,
+      entryDate: entryTimestamp, // <-- MODIFIED: Use the selected entry date
       balance,
       paymentStatus,
       tro: treatmentData.tro ? Timestamp.fromDate(treatmentData.tro) : null,
       createdAt: now,
       updatedAt: now,
     }
-
-    console.log("🏥 Treatment document to create:", {
-      patientId: newTreatment.patientId,
-      patientName: newTreatment.patientName,
-      diagnosis: newTreatment.diagnosis,
-      totalAmount: newTreatment.totalAmount,
-    })
-
     const treatmentRef = await addDoc(collection(db, TREATMENTS_COLLECTION), newTreatment)
     console.log(`✅ Treatment created with ID: ${treatmentRef.id}`)
 
-    // STEP 4: Update patient totals (increment existing values)
-    console.log("🔍 STEP 4: Updating patient totals...")
-    const updateData = {
+    // STEP 4: Update patient totals
+    await updateDoc(patientRef, {
       totalBilled: increment(treatmentData.totalAmount),
       totalPaid: increment(treatmentData.amountPaid),
       outstandingBalance: increment(balance),
       updatedAt: now,
-    }
-
-    console.log("📊 Patient update data:", updateData)
-    await updateDoc(patientRef, updateData)
+    })
     console.log("✅ Patient totals updated")
-
-    // STEP 5: Verify the treatment was created correctly
-    console.log("🔍 STEP 5: Verifying treatment creation...")
-    const verifyTreatmentSnap = await getDoc(treatmentRef)
-    if (verifyTreatmentSnap.exists()) {
-      const verifyData = verifyTreatmentSnap.data()
-      console.log("✅ Treatment verification:", {
-        treatmentId: verifyTreatmentSnap.id,
-        linkedPatientId: verifyData.patientId,
-        patientName: verifyData.patientName,
-        diagnosis: verifyData.diagnosis,
-      })
-
-      // Double-check that patientId matches
-      if (verifyData.patientId !== patientId) {
-        console.error(`❌ CRITICAL ERROR: Treatment patientId mismatch!`)
-        console.error(`Expected: "${patientId}", Got: "${verifyData.patientId}"`)
-        throw new Error("Treatment was not linked to the correct patient")
-      }
-    }
 
     console.log("🎉 ===== TREATMENT ADDITION COMPLETED SUCCESSFULLY =====")
     return treatmentRef.id
@@ -619,53 +574,105 @@ export const getCompletePatientData = async (patientId: string) => {
   }
 }
 
-export const exportToExcel = async (data: Treatment[], filename: string) => {
+// New function to export the complete patient and treatment history
+export const exportToExcel = async () => {
   try {
+    // 1. Fetch all patients and all treatments in parallel
+    const [allPatients, allTreatments] = await Promise.all([
+      getAllPatients(),
+      getAllTreatments(),
+    ]);
+
+    // 2. Create a quick-lookup map for patients by their ID for efficiency
+    const patientsMap = new Map(allPatients.map((p) => [p.id, p]));
+
+    // 3. Combine patient and treatment data
+    const combinedData = allTreatments.map((treatment) => {
+      const patient = patientsMap.get(treatment.patientId);
+      return {
+        // Patient Fields
+        patientId: patient?.id || "N/A",
+        patientName: patient?.name || treatment.patientName,
+        patientPhone: patient?.phone || "N/A",
+        patientAge: patient?.age || "N/A",
+        patientGender: patient?.gender || "N/A",
+        firstVisitDate: patient?.firstVisitDate.toLocaleDateString() || "N/A",
+
+        // Treatment Fields
+        treatmentId: treatment.id,
+        entryDate: treatment.entryDate.toLocaleDateString(),
+        diagnosis: treatment.diagnosis,
+        treatmentPlan: treatment.treatmentPlan,
+        toothNumber: treatment.toothNumber,
+        totalAmount: treatment.totalAmount,
+        amountPaid: treatment.amountPaid,
+        balance: treatment.balance,
+        paymentStatus: treatment.paymentStatus,
+        tro: treatment.tro ? treatment.tro.toLocaleDateString() : "N/A",
+      };
+    });
+
+    // 4. Define the new, more comprehensive headers
     const headers = [
+      "Patient ID",
       "Patient Name",
-      "Date",
+      "Phone",
+      "Age",
+      "Gender",
+      "First Visit",
+      "Treatment ID",
+      "Treatment Date",
       "Diagnosis",
       "Treatment Plan",
-      "Tooth Number",
+      "Tooth #",
       "Total Amount",
       "Amount Paid",
       "Balance",
       "Status",
       "Next Appointment (TRO)",
-    ]
+    ];
 
+    // 5. Generate the CSV content from the combined data
     const csvContent = [
       headers.join(","),
-      ...data.map((row) =>
-        [
-          `"${row.patientName}"`,
-          row.entryDate.toLocaleDateString(),
-          `"${row.diagnosis}"`,
-          `"${row.treatmentPlan}"`,
-          row.toothNumber,
-          row.totalAmount.toFixed(2),
-          row.amountPaid.toFixed(2),
-          row.balance.toFixed(2),
-          row.paymentStatus,
-          row.tro ? row.tro.toLocaleDateString() : "N/A",
-        ].join(","),
+      ...combinedData.map(
+        (row) =>
+          [
+            row.patientId,
+            `"${row.patientName}"`,
+            row.patientPhone,
+            row.patientAge,
+            row.patientGender,
+            row.firstVisitDate,
+            row.treatmentId,
+            row.entryDate,
+            `"${row.diagnosis.replace(/"/g, '""')}"`, // Handle quotes within diagnosis
+            `"${row.treatmentPlan.replace(/"/g, '""')}"`, // Handle quotes within plan
+            row.toothNumber || "",
+            row.totalAmount.toFixed(2),
+            row.amountPaid.toFixed(2),
+            row.balance.toFixed(2),
+            row.paymentStatus,
+            row.tro,
+          ].join(","),
       ),
-    ].join("\n")
+    ].join("\n");
 
-    const blob = new Blob([csvContent], { type: "text/csv" })
-    const url = window.URL.createObjectURL(blob)
-    const link = document.createElement("a")
-    link.href = url
-    link.download = `${filename}.csv`
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    window.URL.revokeObjectURL(url)
+    // 6. Create and trigger the download
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "complete_patient_history.csv"; // Set a fixed filename
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
   } catch (error) {
-    logError("exportToExcel", error)
-    throw error
+    logError("exportCompleteHistoryToExcel", error);
+    throw error;
   }
-}
+};
 
 export const addSampleData = async () => {
   try {
@@ -675,18 +682,18 @@ export const addSampleData = async () => {
       {
         name: "John Doe",
         phone: "123-456-7890",
-        dob: "1990-05-15",
+        age: 30,
         gender: "Male",
       },
       {
         name: "Jane Smith",
         phone: "098-765-4321",
-        dob: "1985-08-22",
+        age: 28,  
         gender: "Female",
       },
     ]
 
-    const sampleTreatments = [
+    const sampleTreatments: Omit<Treatment, "id" | "createdAt" | "updatedAt" | "patientId" | "patientName" | "balance" | "paymentStatus">[] = [
       {
         diagnosis: "Routine Cleaning",
         treatmentPlan: "Professional cleaning and fluoride treatment",
@@ -694,6 +701,7 @@ export const addSampleData = async () => {
         totalAmount: 150,
         amountPaid: 150,
         tro: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        entryDate: new Date(),
       },
       {
         diagnosis: "Cavity Filling",
@@ -701,6 +709,7 @@ export const addSampleData = async () => {
         toothNumber: "14",
         totalAmount: 200,
         amountPaid: 100,
+        entryDate: new Date(),
       },
     ]
 
