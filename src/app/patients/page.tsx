@@ -9,6 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Download, Plus, Search, Eye, Calendar, Phone, User, DollarSign } from "lucide-react"
 import Link from "next/link"
+import { generateCompleteHistoryPDF } from "@/lib/complete-history-pdf-generator"
 import {
   getAllPatients,
   searchPatients,
@@ -184,6 +185,14 @@ export default function PatientsPage() {
             <p className="text-slate-600 mt-2">Manage your patient records and view their treatment history</p>
           </div>
           <div className="flex items-center space-x-2">
+             <Button 
+              onClick={generateCompleteHistoryPDF} 
+              variant="outline" 
+              className="border-red-300 text-red-700 hover:bg-red-50"
+            >
+              <Download className="mr-2 h-4 w-4" />
+              Export PDF
+            </Button>
             <Button onClick={handleExportToExcel} variant="outline" className="border-slate-300 text-slate-700 hover:bg-slate-100">
               <Download className="mr-2 h-4 w-4" />
               Export Data
