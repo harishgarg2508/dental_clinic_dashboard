@@ -725,6 +725,59 @@ export const addSampleData = async () => {
   }
 }
 
+import {
+  //... other imports
+  writeBatch,
+} from "firebase/firestore"
+
+// ... other functions
+
+/**
+ * Deletes a patient and all of their associated treatment documents in a single atomic operation.
+ * @param patientId The ID of the patient to delete.
+ * @returns A promise that resolves to true on success.
+ */
+export const deletePatientAndTreatments = async (patientId: string) => {
+  try {
+    console.log(`🗑️ ===== DELETING PATIENT AND ALL TREATMENTS =====`);
+    console.log(`👤 Patient ID to delete: "${patientId}"`);
+
+    // Use a batched write to perform multiple operations atomically.
+    const batch = writeBatch(db);
+
+    // Step 1: Find all treatment documents for the given patient.
+    const treatmentsRef = collection(db, "treatments");
+    const q = query(treatmentsRef, where("patientId", "==", patientId));
+    const treatmentsSnapshot = await getDocs(q);
+
+    if (!treatmentsSnapshot.empty) {
+      console.log(`🔥 Deleting ${treatmentsSnapshot.size} associated treatments...`);
+      treatmentsSnapshot.forEach((doc) => {
+        batch.delete(doc.ref); // Add each treatment deletion to the batch.
+      });
+    } else {
+      console.log("ℹ️ No associated treatments found for this patient.");
+    }
+
+    // Step 2: Add the patient document deletion to the batch.
+    const patientRef = doc(db, "patients", patientId);
+    batch.delete(patientRef);
+    console.log(`🔥 Deleting patient document: ${patientId}`);
+
+    // Step 3: Commit all the delete operations in the batch at once.
+    await batch.commit();
+    console.log("✅ Batched delete committed successfully.");
+    console.log("🎉 ===== PATIENT DELETION COMPLETED =====");
+
+    return true;
+  } catch (error) {
+    console.error("❌ ===== PATIENT DELETION FAILED =====");
+    logError("deletePatientAndTreatments", error);
+    throw error;
+  }
+};
+
+
 export const initializeFirestoreIndexes = async () => {
   try {
     const treatmentsRef = collection(db, TREATMENTS_COLLECTION)

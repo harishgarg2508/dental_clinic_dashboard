@@ -7,19 +7,27 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Download, Plus, Search, Eye, Calendar, Phone, User, DollarSign } from "lucide-react"
-import Link from "next/link"
+import { Download, Plus, Search, Eye, Calendar, Phone, User, DollarSign, Trash2 } from "lucide-react" // <-- Added Trash2
 import { generateCompleteHistoryPDF } from "@/lib/complete-history-pdf-generator"
 import {
-  getAllPatients,
-  searchPatients,
-  getPatientsWithUpcomingAppointments,
-  exportToExcel,
-  getAllTreatments,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import {
+ getAllPatients,
+ searchPatients,
+ getPatientsWithUpcomingAppointments,
+ exportToExcel,
+ getAllTreatments,
+  deletePatientAndTreatments, // <-- Added the delete function
 } from "@/lib/firebase"
 import { format, differenceInYears } from "date-fns"
 import { toast } from "sonner"
-
+import Link from "next/link"
 interface Patient {
   id: string
   name: string
@@ -33,6 +41,7 @@ interface Patient {
 }
 
 export default function PatientsPage() {
+  
   const [patients, setPatients] = useState<Patient[]>([])
   const [filteredPatients, setFilteredPatients] = useState<Patient[]>([])
   const [loading, setLoading] = useState(true)
@@ -40,7 +49,42 @@ export default function PatientsPage() {
   const [paymentFilter, setPaymentFilter] = useState("all")
   const [appointmentFilter, setAppointmentFilter] = useState("all")
   const [ageFilter, setAgeFilter] = useState("all")
+  
+// --- ADD THESE NEW STATE VARIABLES ---
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [patientToDelete, setPatientToDelete] = useState<{ id: string; name: string } | null>(null);
 
+  /**
+   * This function now opens the confirmation dialog.
+   * The actual deletion logic is moved to a new function called by the dialog.
+   */
+  const handleDeletePatient = (patientId: string, patientName: string) => {
+    setPatientToDelete({ id: patientId, name: patientName });
+    setIsDeleteDialogOpen(true);
+  };
+
+  /**
+   * This function contains the original deletion logic and is called by the dialog's confirm button.
+   */
+  const confirmDeleteAndCloseDialog = async () => {
+    if (!patientToDelete) return;
+
+    try {
+      await deletePatientAndTreatments(patientToDelete.id);
+      
+      // Update the UI instantly by filtering out the deleted patient.
+      setPatients(prev => prev.filter(p => p.id !== patientToDelete.id));
+      
+      toast.success(`Patient ${patientToDelete.name} and all records have been deleted.`);
+    } catch (error) {
+      console.error("Error deleting patient:", error);
+      toast.error("Failed to delete patient. Please try again.");
+    } finally {
+      // Always close the dialog and clear the state
+      setIsDeleteDialogOpen(false);
+      setPatientToDelete(null);
+    }
+  };
   const loadPatients = async () => {
     try {
       console.log("👥 Loading all patients...")
@@ -342,91 +386,143 @@ export default function PatientsPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredPatients.map((patient) => (
-                      <TableRow key={patient.id} className="hover:bg-slate-50 border-slate-200">
-                        <TableCell className="font-medium">
-                          <div className="flex items-center space-x-2">
-                            <User className="h-4 w-4 text-slate-400" />
-                            <span className="text-slate-800">{patient.name}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center space-x-2">
-                            <Phone className="h-4 w-4 text-slate-400" />
-                            <span className="text-slate-600">{patient.phone}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-slate-600">
-                          {patient.age ? `${patient.age} years` : "N/A"}
-                        </TableCell>
-                        <TableCell className="text-slate-600">
-                          {patient.gender || "N/A"}
-                        </TableCell>
-                        <TableCell className="text-slate-600">
-                          {format(patient.firstVisitDate, "MMM dd, yyyy")}
-                        </TableCell>
-                        <TableCell className="font-semibold text-slate-800">
-                          ₹{patient.totalBilled.toFixed(2)}
-                        </TableCell>
-                        <TableCell className="text-green-600 font-semibold">
-                          ₹{patient.totalPaid.toFixed(2)}
-                        </TableCell>
-                        <TableCell
-                          className={
-                            patient.outstandingBalance > 0
-                              ? "text-red-600 font-semibold"
-                              : "text-green-600 font-semibold"
-                          }
-                        >
-                          ₹{patient.outstandingBalance.toFixed(2)}
-                        </TableCell>
-                        <TableCell>
-                          <Badge
-                            className={getPaymentStatusClasses(
-                              getPaymentStatus(patient)
-                            )}
+                {filteredPatients.map((patient) => (
+                  <TableRow key={patient.id} className="hover:bg-slate-50 border-slate-200">
+                    <TableCell className="font-medium">
+                      <div className="flex items-center space-x-2">
+                        <User className="h-4 w-4 text-slate-400" />
+                        <span className="text-slate-800">{patient.name}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center space-x-2">
+                        <Phone className="h-4 w-4 text-slate-400" />
+                        <span className="text-slate-600">{patient.phone}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-slate-600">
+                      {patient.age ? `${patient.age} years` : "N/A"}
+                    </TableCell>
+                    <TableCell className="text-slate-600">
+                      {patient.gender || "N/A"}
+                    </TableCell>
+                    <TableCell className="text-slate-600">
+                      {format(patient.firstVisitDate, "MMM dd, yyyy")}
+                    </TableCell>
+                    <TableCell className="font-semibold text-slate-800">
+                      ₹{patient.totalBilled.toFixed(2)}
+                    </TableCell>
+                    <TableCell className="text-green-600 font-semibold">
+                      ₹{patient.totalPaid.toFixed(2)}
+                    </TableCell>
+                    <TableCell
+                      className={
+                        patient.outstandingBalance > 0
+                          ? "text-red-600 font-semibold"
+                          : "text-green-600 font-semibold"
+                      }
+                    >
+                      ₹{patient.outstandingBalance.toFixed(2)}
+                    </TableCell>
+                    
+                    {/* --- CORRECTED STATUS CELL --- */}
+                    <TableCell>
+                      <Badge
+                        className={getPaymentStatusClasses(
+                          getPaymentStatus(patient)
+                        )}
+                      >
+                        {getPaymentStatus(patient).replace("_", " ")}
+                      </Badge>
+                    </TableCell>
+                    
+                    {/* --- CORRECTED ACTIONS CELL --- */}
+                    <TableCell>
+                        <div className="flex items-center space-x-2">
+                          <Button
+                            asChild
+                            variant="outline"
+                            size="sm"
+                            className="border-blue-300 text-blue-700 hover:bg-blue-50"
                           >
-                            {getPaymentStatus(patient).replace("_", " ")}
-                          </Badge>
-                        </TableCell>
-                      <TableCell>
-                        <Button asChild variant="outline" size="sm" className="border-blue-300 text-blue-700 hover:bg-blue-50">
-                          <Link href={`/patients/${patient.id}`}>
-                            <Eye className="mr-1 h-3 w-3" />
-                            View Details
-                          </Link>
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                  {filteredPatients.length === 0 && (
-                    <TableRow>
-                      <TableCell colSpan={10} className="text-center py-12">
-                        <div className="flex flex-col items-center space-y-4">
-                          <User className="h-16 w-16 text-slate-300" />
-                          <p className="text-slate-500 text-lg">
-                            {searchQuery || paymentFilter !== "all" || ageFilter !== "all" || appointmentFilter !== "all"
-                              ? "No patients found matching your criteria"
-                              : "No patients found"}
-                          </p>
-                          {patients.length === 0 && (
-                            <Button asChild className="bg-blue-600 hover:bg-blue-700 text-white">
-                              <Link href="/patients/add">
-                                <Plus className="mr-2 h-4 w-4" />
-                                Add Your First Patient
-                              </Link>
-                            </Button>
-                          )}
+                            <Link href={`/patients/${patient.id}`}>
+                              <Eye className="mr-1 h-3 w-3" />
+                              View Details {/* <-- This is now actual text */}
+                            </Link>
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="border-red-300 text-red-700 hover:bg-red-50 cursor-pointer"
+                            onClick={() => handleDeletePatient(patient.id, patient.name)}
+                          >
+                            <Trash2 className="mr-1 h-3 w-3" />
+                            {/* Delete */}
+                          </Button>
                         </div>
                       </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
+                  </TableRow>
+                ))}
+                {filteredPatients.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={10} className="text-center py-12">
+                      <div className="flex flex-col items-center space-y-4">
+                        <User className="h-16 w-16 text-slate-300" />
+                        <p className="text-slate-500 text-lg">
+                          {searchQuery || paymentFilter !== "all" || ageFilter !== "all" || appointmentFilter !== "all"
+                            ? "No patients found matching your criteria"
+                            : "No patients found"}
+                        </p>
+                        {patients.length === 0 && (
+                          <Button asChild className="bg-blue-600 hover:bg-blue-700 text-white">
+                            <Link href="/patients/add">
+                              <Plus className="mr-2 h-4 w-4" />
+                              Add Your First Patient
+                            </Link>
+                          </Button>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
               </Table>
             </div>
           </CardContent>
         </Card>
       </div>
+      {/* --- ADD THIS ENTIRE DIALOG COMPONENT --- */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent className="sm:max-w-md bg-white">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-red-600">Confirm Deletion</DialogTitle>
+            <DialogDescription className="text-slate-600 pt-2">
+              Are you absolutely sure you want to delete the patient{" "}
+              <strong className="text-slate-800">{patientToDelete?.name}</strong>?
+              <br /><br />
+              This action is irreversible and will permanently delete all associated treatment records.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="mt-4 sm:justify-end space-x-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsDeleteDialogOpen(false)}
+              className="border-slate-300 text-slate-700 hover:bg-slate-100 hover:text-slate-800 cursor-pointer"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={confirmDeleteAndCloseDialog} // This button calls your delete function
+              className="bg-red-600 hover:bg-red-700 text-white cursor-pointer"
+            >
+              Yes, Delete Patient
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      {/* --- END OF DIALOG COMPONENT --- */}
     </div>
   )
 }
