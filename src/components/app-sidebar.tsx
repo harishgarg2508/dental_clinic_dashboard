@@ -1,5 +1,6 @@
 "use client"
 
+import type React from "react"
 import {
   Calendar,
   Home,
@@ -8,23 +9,11 @@ import {
   Settings,
   DollarSign,
   X,
+  Menu,
 } from "lucide-react"
 import Link from "next/link"
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarHeader,
-  SidebarFooter,
-  useSidebar,
-} from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
-import { useEffect, useRef } from "react"
+import { useState, useEffect, useRef } from "react"
 
 const menuItems = [
   { title: "Dashboard", url: "/dashboard", icon: Home },
@@ -35,75 +24,105 @@ const menuItems = [
   { title: "Settings", url: "/settings", icon: Settings },
 ]
 
-export function AppSidebar() {
-  const { isOpen, setOpen } = useSidebar()
-  const sidebarRef = useRef<HTMLDivElement>(null)
 
-  // Close sidebar on outside click
+export function AppSidebar() {
+  const [isOpen, setIsOpen] = useState(false)
+  const drawerRef = useRef<HTMLDivElement>(null)
+
+  // Effect to handle clicks outside the drawer to close it
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (
-        isOpen &&
-        sidebarRef.current &&
-        !sidebarRef.current.contains(event.target as Node)
-      ) {
-        setOpen(false)
+      if (drawerRef.current && !drawerRef.current.contains(event.target as Node)) {
+        setIsOpen(false)
       }
     }
+    if (isOpen) {
+      document.addEventListener("mousedown", handleClickOutside)
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside)
+    }
+  }, [isOpen])
 
-    document.addEventListener("mousedown", handleClickOutside)
-    return () => document.removeEventListener("mousedown", handleClickOutside)
-  }, [isOpen, setOpen])
+  // Effect to handle the 'Escape' key to close the drawer
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setIsOpen(false)
+      }
+    }
+    document.addEventListener("keydown", handleKeyDown)
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown)
+    }
+  }, [])
+
 
   return (
-    <Sidebar
-      ref={sidebarRef}
-      className="bg-white text-slate-800 border-r border-slate-200 shadow-xl z-50"
-      collapsible="offcanvas"
-    >
-      <SidebarHeader>
-        <div className="flex items-center justify-between p-4">
+    <>
+      {/* The trigger button that will be in the navbar */}
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={() => setIsOpen(true)}
+        className="p-3 w-10 h-10 bg-white text-gray-800 border border-gray-300 rounded-md hover:bg-gray-100 hover:border-gray-400 transition"
+      >
+        <Menu className="h-5 w-5" />
+        <span className="sr-only">Open Menu</span>
+      </Button>
+
+      {/* The backdrop that covers the page when the drawer is open */}
+      {isOpen && (
+        <div
+          className="fixed inset-0 bg-black/60 z-40"
+          onClick={() => setIsOpen(false)}
+        />
+      )}
+
+      {/* The Drawer/Sidebar itself */}
+      <aside
+        ref={drawerRef}
+        className={`fixed top-0 left-0 h-full w-64 bg-white text-slate-800 border-r border-slate-200 shadow-xl z-50 transform transition-transform duration-300 ease-in-out ${
+          isOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between p-4 border-b border-slate-200">
           <h2 className="text-xl font-bold text-slate-900">Dental Clinic 🦷</h2>
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => setOpen(false)}
+            onClick={() => setIsOpen(false)}
             className="h-8 w-8 border border-slate-400 text-slate-700 hover:bg-slate-200 rounded-md transition"
           >
             <X className="h-4 w-4" />
             <span className="sr-only">Close sidebar</span>
           </Button>
         </div>
-      </SidebarHeader>
 
-      <SidebarContent className="p-4">
-        <SidebarGroup>
-          <SidebarGroupLabel className="text-xs font-semibold uppercase text-slate-500 tracking-wider">
-            Navigation
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu className="mt-2 space-y-1">
-              {menuItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <Link
-                      href={item.url}
-                      className="flex items-center gap-3 rounded-md px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 hover:text-slate-900 transition"
-                    >
-                      <item.icon className="h-4 w-4" />
-                      <span>{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-      </SidebarContent>
+        {/* Navigation Menu */}
+        <nav className="p-4">
+          <ul className="space-y-1">
+            {menuItems.map((item) => (
+              <li key={item.title}>
+                <Link
+                  href={item.url}
+                  onClick={() => setIsOpen(false)} // Close drawer on link click
+                  className="flex items-center gap-3 rounded-md px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 hover:text-slate-900 transition"
+                >
+                  <item.icon className="h-4 w-4" />
+                  <span>{item.title}</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </nav>
 
-      <SidebarFooter>
-        <div className="p-4 text-sm text-slate-500">© 2025 Harish Garg</div>
-      </SidebarFooter>
-    </Sidebar>
+        {/* Footer */}
+        <div className="absolute bottom-0 w-full p-4 border-t border-slate-200">
+           <p className="text-sm text-slate-500">© 2025 Harish Garg</p>
+        </div>
+      </aside>
+    </>
   )
 }

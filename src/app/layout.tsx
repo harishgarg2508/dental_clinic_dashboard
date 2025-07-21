@@ -3,7 +3,6 @@ import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
-import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar"
 import { AppSidebar } from "@/components/app-sidebar"
 import { Toaster } from "sonner"
 
@@ -23,22 +22,25 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${inter.className} bg-gray-50 text-gray-900`}>
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} disableTransitionOnChange>
-          <SidebarProvider defaultOpen={false}>
-            <AppSidebar />
-            <SidebarInset>
-              {/* ✅ Green Navbar */}
-              <header className="flex h-16 shrink-0 items-center gap-2 px-4 bg-green-600 shadow-sm border-b border-green-700">
-                {/* ✅ Dark Icon + Border */}
-                <SidebarTrigger className="p-3 w-10 h-10 bg-white text-gray-800 border border-gray-300 rounded-md hover:bg-gray-100 hover:border-gray-400 transition" />
-                <div className="ml-4">
-                  <h1 className="text-xl font-semibold text-white">Sunrise Dental Clinic and Implant Centre</h1>
-                </div>
-              </header>
+          
+          {/* This wrapper div fixes the layout issue */}
+          <div className="flex flex-col min-h-screen bg-gray-50">
+            {/* ✅ Green Top Navbar */}
+            <header className="flex h-16 shrink-0 items-center gap-2 px-4 bg-green-600 shadow-sm border-b border-green-700">
+              <AppSidebar />
+              <div>
+                <h1 className="text-xl font-semibold text-white">
+                  Sunrise Dental Clinic and Implant Centre
+                </h1>
+              </div>
+            </header>
 
-              {/* ✅ Main content area */}
-              <main className="flex-1 space-y-4 p-8 pt-6 bg-white">{children}</main>
-            </SidebarInset>
-          </SidebarProvider>
+            {/* ✅ Main Content Area (now expands correctly) */}
+            <main className="flex-1 space-y-4 bg-white">
+              {children}
+            </main>
+          </div>
+
           <Toaster />
         </ThemeProvider>
       </body>
