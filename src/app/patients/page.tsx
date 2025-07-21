@@ -335,7 +335,7 @@ export default function PatientsPage() {
                 <SelectTrigger className="w-[180px] border-slate-300 bg-white text-slate-900">
                   <SelectValue placeholder="Payment Status" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-white text-slate-900">
                   <SelectItem value="all">All Payments</SelectItem>
                   <SelectItem value="paid">Fully Paid</SelectItem>
                   <SelectItem value="unpaid">Unpaid</SelectItem>
@@ -348,7 +348,7 @@ export default function PatientsPage() {
                 <SelectTrigger className="w-[150px] border-slate-300 bg-white text-slate-900">
                   <SelectValue placeholder="Age Group" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-white text-slate-900">
                   <SelectItem value="all">All Ages</SelectItem>
                   <SelectItem value="child">Children (&lt;18)</SelectItem>
                   <SelectItem value="adult">Adults (18-64)</SelectItem>
@@ -361,7 +361,7 @@ export default function PatientsPage() {
                 <SelectTrigger className="w-[180px] border-slate-300 bg-white text-slate-900">
                   <SelectValue placeholder="Appointments" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-white text-slate-900">
                   <SelectItem value="all">All Patients</SelectItem>
                   <SelectItem value="upcoming">Has Upcoming</SelectItem>
                 </SelectContent>

@@ -737,6 +737,56 @@ import {
  * @param patientId The ID of the patient to delete.
  * @returns A promise that resolves to true on success.
  */
+
+
+export const deleteSingleTreatment = async (treatmentId: string) => {
+  try {
+    console.log(`🗑️ ===== DELETING SINGLE TREATMENT =====`);
+    console.log(`🏥 Treatment ID to delete: "${treatmentId}"`);
+
+    const treatmentRef = doc(db, "treatments", treatmentId);
+    const treatmentSnap = await getDoc(treatmentRef);
+
+    if (!treatmentSnap.exists()) {
+      throw new Error("Treatment not found. It may have already been deleted.");
+    }
+
+    const treatmentData = treatmentSnap.data();
+    const patientId = treatmentData.patientId;
+
+    if (!patientId) {
+      throw new Error("Treatment is not linked to a patient.");
+    }
+
+    // Use a batched write for an atomic update.
+    const batch = writeBatch(db);
+
+    // Step 1: Update the patient's financial totals by decrementing the values.
+    const patientRef = doc(db, "patients", patientId);
+    batch.update(patientRef, {
+      totalBilled: increment(-treatmentData.totalAmount),
+      totalPaid: increment(-treatmentData.amountPaid),
+      outstandingBalance: increment(-treatmentData.balance),
+      updatedAt: Timestamp.now(),
+    });
+    console.log(`📊 Decrementing patient totals for patient ID: ${patientId}`);
+
+    // Step 2: Delete the actual treatment document.
+    batch.delete(treatmentRef);
+    console.log(`🔥 Deleting treatment document: ${treatmentId}`);
+
+    // Step 3: Commit the batch.
+    await batch.commit();
+    console.log("✅ Patient financials updated and treatment deleted successfully.");
+    console.log("🎉 ===== SINGLE TREATMENT DELETION COMPLETED =====");
+
+    return true;
+  } catch (error) {
+    console.error("❌ ===== SINGLE TREATMENT DELETION FAILED =====");
+    logError("deleteSingleTreatment", error);
+    throw error;
+  }
+};
 export const deletePatientAndTreatments = async (patientId: string) => {
   try {
     console.log(`🗑️ ===== DELETING PATIENT AND ALL TREATMENTS =====`);

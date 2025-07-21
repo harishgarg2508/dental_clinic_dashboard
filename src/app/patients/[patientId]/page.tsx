@@ -19,7 +19,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { ArrowLeft, Plus, Edit, Receipt, Phone, Calendar, User, Download, RefreshCw, AlertCircle } from "lucide-react"
+import { ArrowLeft, Plus, Edit, Receipt, Phone, Calendar, User, Download, RefreshCw, AlertCircle, Trash2 } from "lucide-react"
 import Link from "next/link"
 import {
   getPatientById,
@@ -27,6 +27,7 @@ import {
   addTreatmentToPatient,
   updateTreatmentPayment,
   getCompletePatientData,
+  deleteSingleTreatment,
 } from "@/lib/firebase"
 import { format, differenceInYears } from "date-fns"
 import { toast } from "sonner"
@@ -90,6 +91,23 @@ export default function PatientDetailPage() {
 
   const [paymentAmount, setPaymentAmount] = useState("")
 
+  const handleDeleteTreatment = async (treatmentId: string, diagnosis: string) => {
+    if (window.confirm(`Are you sure you want to delete the treatment: "${diagnosis}"? This action cannot be undone.`)) {
+      try {
+        await deleteSingleTreatment(treatmentId);
+        
+        // Instantly update the UI by removing the treatment from the local state
+        // and reloading the patient data to get the updated financial summary.
+        setTreatments(prev => prev.filter(t => t.id !== treatmentId));
+        await loadPatientData(); // Reload to update financial cards
+        
+        toast.success("Treatment deleted successfully.");
+      } catch (error) {
+        console.error("Error deleting treatment:", error);
+        toast.error("Failed to delete treatment.");
+      }
+    }
+  };
   const loadPatientData = async () => {
     try {
       console.log(`🔄 ===== LOADING PATIENT DATA =====`)
@@ -640,10 +658,16 @@ export default function PatientDetailPage() {
                         onClick={() => handleSendToWhatsApp(treatment)}
                         className="bg-green-100 text-green-700 hover:bg-green-200"
                       >
-                        <svg className="mr-1 h-3 w-3 text-green-600 bg" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M17.472 14.382c...Z" />
-                        </svg>
+                        <Phone className="mr-1 h-3 w-3" />
+                        
                         WhatsApp
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={() => handleDeleteTreatment(treatment.id, treatment.diagnosis)}
+                        className="bg-green-100 text-green-700 hover:bg-green-200"
+                      >
+                        <Trash2 className="mr-1 h-3 w-3" />                        
                       </Button>
                     </div>
                   </TableCell>
