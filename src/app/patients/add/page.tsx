@@ -260,7 +260,7 @@ export default function AddPatientPage() {
                     type="date"
                     value={formData.tro}
                     onChange={(e) => handleInputChange("tro", e.target.value)}
-                    min={new Date().toISOString().split("T")[0]}
+                    // min={new Date().toISOString().split("T")[0]}
                     className={inputStyle}
                   />
                   <p className="text-xs text-gray-500">Leave empty if no follow-up is required.</p>
