@@ -10,10 +10,13 @@ import {
   DollarSign,
   X,
   Menu,
+  LogOut,
 } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { useState, useEffect, useRef } from "react"
+import { useAuth } from "@/lib/auth"
+import { toast } from "sonner"
 
 const menuItems = [
   { title: "Dashboard", url: "/dashboard", icon: Home },
@@ -28,6 +31,16 @@ const menuItems = [
 export function AppSidebar() {
   const [isOpen, setIsOpen] = useState(false)
   const drawerRef = useRef<HTMLDivElement>(null)
+  const { logout } = useAuth()
+
+  const handleLogout = async () => {
+    try {
+      await logout()
+      toast.success("Logged out successfully")
+    } catch (error) {
+      toast.error("Failed to log out")
+    }
+  }
 
   // Effect to handle clicks outside the drawer to close it
   useEffect(() => {
@@ -119,8 +132,16 @@ export function AppSidebar() {
         </nav>
 
         {/* Footer */}
-        <div className="absolute bottom-0 w-full p-4 border-t border-slate-200">
-           <p className="text-sm text-slate-500">© 2025 Harish Garg</p>
+        <div className="absolute bottom-0 w-full p-4 border-t border-slate-200 space-y-4">
+          <Button 
+            variant="ghost" 
+            className="w-full flex items-center gap-2 justify-center text-red-600 hover:text-red-700 hover:bg-red-50"
+            onClick={handleLogout}
+          >
+            <LogOut className="h-4 w-4" />
+            <span>Logout</span>
+          </Button>
+          <p className="text-sm text-slate-500 text-center">© 2025 Harish Garg</p>
         </div>
       </aside>
     </>
