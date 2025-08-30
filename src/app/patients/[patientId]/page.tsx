@@ -866,167 +866,213 @@ export default function PatientDetailPage() {
 
 {/* Add Treatment Dialog */}
 <Dialog open={showAddTreatment} onOpenChange={setShowAddTreatment}>
-  <DialogContent className="sm:max-w-[600px] bg-white dark:bg-slate-900">
-    <DialogHeader>
+  <DialogContent className="sm:max-w-[600px] bg-gray-50 dark:bg-slate-950 rounded-xl shadow-lg flex flex-col max-h-[90vh] text-slate-900 dark:text-slate-100">
+    
+    {/* Header */}
+    <DialogHeader className="p-6 border-b border-slate-200 dark:border-slate-700">
       <DialogTitle className="text-xl font-bold text-slate-900 dark:text-slate-100">
         Add New Treatment
       </DialogTitle>
-      <DialogDescription className="text-slate-600 dark:text-slate-400">
-        Add a new treatment record for{' '}
-        <strong className="text-slate-700 dark:text-slate-300">{patient.name}</strong> (ID: {patient.id})
+      <DialogDescription className="text-slate-600 dark:text-slate-400 text-sm">
+        Add a new treatment record for{" "}
+        <strong className="text-slate-700 dark:text-slate-300">
+          {patient.name}
+        </strong>{" "}
+        (ID: {patient.id})
       </DialogDescription>
     </DialogHeader>
 
-    <form onSubmit={handleAddTreatment}>
-      <div className="grid gap-6 py-4">
-        <div className="space-y-2">
-          <Label htmlFor="diagnosis" className="font-medium text-slate-700 dark:text-slate-300">
-            Diagnosis *
-          </Label>
-          <Textarea
-            id="diagnosis"
-            value={newTreatment.diagnosis}
-            onChange={(e) => setNewTreatment((prev) => ({ ...prev, diagnosis: e.target.value }))}
-            placeholder="Enter diagnosis details"
-            required
-            className="bg-slate-50 border-slate-300 text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-50 dark:placeholder:text-slate-500 dark:focus:ring-blue-600"
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="treatmentPlan" className="font-medium text-slate-700 dark:text-slate-300">
-            Treatment Plan
-          </Label>
-          <Textarea
-            id="treatmentPlan"
-            value={newTreatment.treatmentPlan}
-            onChange={(e) => setNewTreatment((prev) => ({ ...prev, treatmentPlan: e.target.value }))}
-            placeholder="Describe the treatment plan"
-            className="bg-slate-50 border-slate-300 text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-50 dark:placeholder:text-slate-500 dark:focus:ring-blue-600"
-          />
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    {/* Scrollable Body */}
+    <div className="flex-1 overflow-y-auto px-6 py-4">
+      <form id="addTreatmentForm" onSubmit={handleAddTreatment}>
+        <div className="grid gap-6">
+          {/* Diagnosis */}
           <div className="space-y-2">
-            <Label htmlFor="entryDate" className="font-medium text-slate-700 dark:text-slate-300">
-              Entry Date *
+            <Label htmlFor="diagnosis" className="font-medium text-slate-800 dark:text-slate-200">
+              Diagnosis *
             </Label>
-            <Input
-              id="entryDate"
-              type="date"
-              value={newTreatment.entryDate}
-              onChange={(e) => setNewTreatment((prev) => ({ ...prev, entryDate: e.target.value }))}
+            <Textarea
+              id="diagnosis"
+              value={newTreatment.diagnosis}
+              onChange={(e) =>
+                setNewTreatment((prev) => ({ ...prev, diagnosis: e.target.value }))
+              }
+              placeholder="Enter diagnosis details"
               required
-              className="bg-slate-50 border-slate-300 text-slate-900 focus:ring-2 focus:ring-blue-500 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-50 dark:focus:ring-blue-600"
+              className="bg-white border-slate-300 text-slate-900 placeholder:text-slate-500 focus:ring-2 focus:ring-blue-500 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-50 dark:placeholder:text-slate-500 dark:focus:ring-blue-600 rounded-lg"
             />
           </div>
 
+          {/* Treatment Plan */}
           <div className="space-y-2">
-            <Label htmlFor="toothNumber" className="font-medium text-slate-700 dark:text-slate-300">
-              Tooth Number
+            <Label htmlFor="treatmentPlan" className="font-medium text-slate-800 dark:text-slate-200">
+              Treatment Plan
             </Label>
-            <Input
-              id="toothNumber"
-              value={newTreatment.toothNumber}
-              onChange={(e) => setNewTreatment((prev) => ({ ...prev, toothNumber: e.target.value }))}
-              placeholder="e.g., 25, 14-15"
-              className="bg-slate-50 border-slate-300 text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-50 dark:placeholder:text-slate-500 dark:focus:ring-blue-600"
+            <Textarea
+              id="treatmentPlan"
+              value={newTreatment.treatmentPlan}
+              onChange={(e) =>
+                setNewTreatment((prev) => ({ ...prev, treatmentPlan: e.target.value }))
+              }
+              placeholder="Describe the treatment plan"
+              className="bg-white border-slate-300 text-slate-900 placeholder:text-slate-500 focus:ring-2 focus:ring-blue-500 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-50 dark:placeholder:text-slate-500 dark:focus:ring-blue-600 rounded-lg"
             />
           </div>
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+          {/* Entry Date & Tooth Number */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
-              <Label htmlFor="tro" className="font-medium text-slate-700 dark:text-slate-300 flex items-center gap-2">
-                <Calendar className="h-4 w-4 text-slate-500" />
-                Next Appointment (TRO)
+              <Label htmlFor="entryDate" className="font-medium text-slate-800 dark:text-slate-200">
+                Entry Date *
               </Label>
               <Input
-                id="tro"
+                id="entryDate"
                 type="date"
-                value={newTreatment.tro}
-                onChange={(e) => setNewTreatment((prev) => ({ ...prev, tro: e.target.value }))}
-                className="bg-slate-50 border-slate-300 text-slate-900 focus:ring-2 focus:ring-blue-500 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-50 dark:focus:ring-blue-600"
+                value={newTreatment.entryDate}
+                onChange={(e) =>
+                  setNewTreatment((prev) => ({ ...prev, entryDate: e.target.value }))
+                }
+                required
+                className="bg-white border-slate-300 text-slate-900 focus:ring-2 focus:ring-blue-500 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-50 dark:focus:ring-blue-600 rounded-lg"
               />
             </div>
-        </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="totalAmount" className="font-medium text-slate-700 dark:text-slate-300">
-              Total Amount *
-            </Label>
-            <Input
-              id="totalAmount"
-              type="number"
-              step="0.01"
-              min="-1"
-              value={newTreatment.totalAmount}
-              onChange={(e) => setNewTreatment((prev) => ({ ...prev, totalAmount: e.target.value }))}
-              placeholder="0.00"
-              required
-              className="bg-slate-50 border-slate-300 text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-50 dark:placeholder:text-slate-500 dark:focus:ring-blue-600"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="amountPaid" className="font-medium text-slate-700 dark:text-slate-300">
-              Amount Paid
-            </Label>
-            <Input
-              id="amountPaid"
-              type="number"
-              step="0.01"
-              min="-1"
-              value={newTreatment.amountPaid}
-              onChange={(e) => setNewTreatment((prev) => ({ ...prev, amountPaid: e.target.value }))}
-              placeholder="0.00"
-              className="bg-slate-50 border-slate-300 text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-50 dark:placeholder:text-slate-500 dark:focus:ring-blue-600"
-            />
-          </div>
-        </div>
-
-        <div className="p-4 bg-slate-100 dark:bg-slate-800 rounded-lg">
-          <div className="text-sm space-y-2">
-            <div className="flex justify-between">
-              <span className="text-slate-600 dark:text-slate-400">Total Amount:</span>
-              <span className="font-semibold text-slate-800 dark:text-slate-200">
-                ₹{parseFloat(newTreatment.totalAmount || '0').toFixed(2)}
-              </span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-slate-600 dark:text-slate-400">Amount Paid:</span>
-              <span className="font-semibold text-green-600 dark:text-green-500">
-                ₹{parseFloat(newTreatment.amountPaid || '0').toFixed(2)}
-              </span>
-            </div>
-            <div className="flex justify-between font-bold border-t border-slate-200 dark:border-slate-700 pt-2 mt-2">
-              <span className="text-slate-700 dark:text-slate-300">Balance Due:</span>
-              <span
-                className={
-                  parseFloat(newTreatment.totalAmount || '0') - parseFloat(newTreatment.amountPaid || '0') > 0
-                    ? 'text-red-600 dark:text-red-500'
-                    : 'text-green-600 dark:text-green-500'
+            <div className="space-y-2">
+              <Label htmlFor="toothNumber" className="font-medium text-slate-800 dark:text-slate-200">
+                Tooth Number
+              </Label>
+              <Input
+                id="toothNumber"
+                value={newTreatment.toothNumber}
+                onChange={(e) =>
+                  setNewTreatment((prev) => ({ ...prev, toothNumber: e.target.value }))
                 }
-              >
-                ₹{(parseFloat(newTreatment.totalAmount || '0') - parseFloat(newTreatment.amountPaid || '0')).toFixed(2)}
-              </span>
+                placeholder="e.g., 25, 14-15"
+                className="bg-white border-slate-300 text-slate-900 placeholder:text-slate-500 focus:ring-2 focus:ring-blue-500 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-50 dark:placeholder:text-slate-500 dark:focus:ring-blue-600 rounded-lg"
+              />
+            </div>
+          </div>
+
+          {/* Next Appointment (TRO) */}
+          <div className="space-y-2">
+            <Label
+              htmlFor="tro"
+              className="font-medium text-slate-800 dark:text-slate-200 flex items-center gap-2"
+            >
+              <Calendar className="h-4 w-4 text-slate-600 dark:text-slate-400" />
+              Next Appointment (TRO)
+            </Label>
+            <Input
+              id="tro"
+              type="date"
+              value={newTreatment.tro}
+              onChange={(e) =>
+                setNewTreatment((prev) => ({ ...prev, tro: e.target.value }))
+              }
+              className="bg-white border-slate-300 text-slate-900 focus:ring-2 focus:ring-blue-500 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-50 dark:focus:ring-blue-600 rounded-lg"
+            />
+          </div>
+
+          {/* Amounts */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="totalAmount" className="font-medium text-slate-800 dark:text-slate-200">
+                Total Amount *
+              </Label>
+              <Input
+                id="totalAmount"
+                type="number"
+                step="0.01"
+                min="-1"
+                value={newTreatment.totalAmount}
+                onChange={(e) =>
+                  setNewTreatment((prev) => ({ ...prev, totalAmount: e.target.value }))
+                }
+                placeholder="0.00"
+                required
+                className="bg-white border-slate-300 text-slate-900 placeholder:text-slate-500 focus:ring-2 focus:ring-blue-500 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-50 dark:placeholder:text-slate-500 dark:focus:ring-blue-600 rounded-lg"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="amountPaid" className="font-medium text-slate-800 dark:text-slate-200">
+                Amount Paid
+              </Label>
+              <Input
+                id="amountPaid"
+                type="number"
+                step="0.01"
+                min="-1"
+                value={newTreatment.amountPaid}
+                onChange={(e) =>
+                  setNewTreatment((prev) => ({ ...prev, amountPaid: e.target.value }))
+                }
+                placeholder="0.00"
+                className="bg-white border-slate-300 text-slate-900 placeholder:text-slate-500 focus:ring-2 focus:ring-blue-500 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-50 dark:placeholder:text-slate-500 dark:focus:ring-blue-600 rounded-lg"
+              />
+            </div>
+          </div>
+
+          {/* Summary Card */}
+          <div className="p-4 bg-gray-100 dark:bg-slate-800 rounded-lg">
+            <div className="text-sm space-y-2">
+              <div className="flex justify-between">
+                <span className="text-slate-700 dark:text-slate-400">Total Amount:</span>
+                <span className="font-semibold text-slate-900 dark:text-slate-200">
+                  ₹{parseFloat(newTreatment.totalAmount || "0").toFixed(2)}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-700 dark:text-slate-400">Amount Paid:</span>
+                <span className="font-semibold text-green-700 dark:text-green-500">
+                  ₹{parseFloat(newTreatment.amountPaid || "0").toFixed(2)}
+                </span>
+              </div>
+              <div className="flex justify-between font-bold border-t border-slate-200 dark:border-slate-700 pt-2 mt-2">
+                <span className="text-slate-800 dark:text-slate-300">Balance Due:</span>
+                <span
+                  className={
+                    parseFloat(newTreatment.totalAmount || "0") -
+                      parseFloat(newTreatment.amountPaid || "0") >
+                    0
+                      ? "text-red-700 dark:text-red-500"
+                      : "text-green-700 dark:text-green-500"
+                  }
+                >
+                  ₹
+                  {(
+                    parseFloat(newTreatment.totalAmount || "0") -
+                    parseFloat(newTreatment.amountPaid || "0")
+                  ).toFixed(2)}
+                </span>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      </form>
+    </div>
 
-      <DialogFooter className="mt-4">
-        <Button type="button" variant="outline" onClick={() => setShowAddTreatment(false)} disabled={addingTreatment} className="dark:text-slate-300 dark:border-slate-600 dark:hover:bg-slate-800">
-          Cancel
-        </Button>
-        <Button type="submit" disabled={addingTreatment} className="bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50">
-          {addingTreatment ? 'Adding...' : 'Add Treatment'}
-        </Button>
-      </DialogFooter>
-    </form>
+    {/* Footer */}
+    <DialogFooter className="p-6 border-t border-slate-200 dark:border-slate-700 flex justify-end gap-3">
+      <Button
+        type="button"
+        variant="outline"
+        onClick={() => setShowAddTreatment(false)}
+        disabled={addingTreatment}
+        className="text-slate-700 border-slate-300 hover:bg-slate-100 dark:text-slate-300 dark:border-slate-600 dark:hover:bg-slate-800"
+      >
+        Cancel
+      </Button>
+      <Button
+        type="submit"
+        form="addTreatmentForm"
+        disabled={addingTreatment}
+        className="bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50"
+      >
+        {addingTreatment ? "Adding..." : "Add Treatment"}
+      </Button>
+    </DialogFooter>
   </DialogContent>
 </Dialog>
-
 
 {/* Add Payment Dialog */}
 <Dialog open={showEditPayment} onOpenChange={setShowEditPayment}>
