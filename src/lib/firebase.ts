@@ -17,6 +17,7 @@ import {
   increment,
   addDoc,
   updateDoc,
+  runTransaction,
 } from "firebase/firestore"
 
 
@@ -770,6 +771,120 @@ import {
  * @returns A promise that resolves to true on success.
  */
 
+// Add direct patient payment
+export const addPatientPayment = async (patientId: string, amount: number, note?: string) => {
+  try {
+    console.log("💰 ===== ADDING DIRECT PATIENT PAYMENT =====")
+    console.log(`👤 Patient ID: "${patientId}"`)
+    console.log(`💵 Payment amount: ₹${amount}`)
+
+    if (!patientId || patientId.trim() === "") {
+      throw new Error("Patient ID is required")
+    }
+
+    if (amount <= 0) {
+      throw new Error("Payment amount must be positive")
+    }
+
+    const now = Timestamp.now()
+
+    // Get all unpaid/partially paid treatments for this patient
+    const treatmentsQuery = query(
+      collection(db, TREATMENTS_COLLECTION),
+      where("patientId", "==", patientId),
+      where("paymentStatus", "in", ["UNPAID", "PARTIALLY_PAID"]),
+      orderBy("entryDate", "asc")
+    )
+
+    // Get all treatments that need payment (outside transaction)
+    const treatmentsSnap = await getDocs(treatmentsQuery);
+
+    await runTransaction(db, async (transaction) => {
+      // Get patient data first
+      const patientRef = doc(db, PATIENTS_COLLECTION, patientId)
+      const patientDoc = await transaction.get(patientRef)
+      
+      if (!patientDoc.exists()) {
+        throw new Error("Patient not found")
+      }
+      
+      const patient = patientDoc.data()
+      
+      if (amount > patient.outstandingBalance) {
+        throw new Error("Payment amount cannot exceed outstanding balance")
+      }
+
+      let remainingAmount = amount
+      
+      // Update each treatment until the payment amount is exhausted
+      interface TreatmentDocData {
+        amountPaid: number
+        balance: number
+        totalAmount: number
+        paymentStatus: "PAID" | "UNPAID" | "PARTIALLY_PAID"
+        paymentHistory?: PaymentRecord[]
+      }
+
+      interface PaymentRecord {
+        amount: number
+        date: Date
+        note?: string
+      }
+
+      treatmentsSnap.docs.forEach((treatmentDoc) => {
+        if (remainingAmount <= 0) return
+
+        const treatment = treatmentDoc.data() as TreatmentDocData
+        const treatmentRef = treatmentDoc.ref
+
+        if (treatment.balance > 0) {
+          const paymentForTreatment: number = Math.min(treatment.balance, remainingAmount)
+          const newAmountPaid: number = treatment.amountPaid + paymentForTreatment
+          const newBalance: number = treatment.totalAmount - newAmountPaid
+          const newPaymentStatus: "PAID" | "PARTIALLY_PAID" = newBalance <= 0 ? "PAID" : "PARTIALLY_PAID"
+
+          // Add payment record to treatment
+          const paymentRecord: PaymentRecord = {
+            amount: paymentForTreatment,
+            date: now.toDate(),
+            note: note || "Direct patient payment"
+          }
+
+          transaction.update(treatmentRef, {
+            amountPaid: newAmountPaid,
+            balance: newBalance,
+            paymentStatus: newPaymentStatus,
+            paymentHistory: [...(treatment.paymentHistory || []), paymentRecord],
+            updatedAt: now
+          })
+
+          remainingAmount -= paymentForTreatment
+        }
+      })
+
+      // Add payment record to patient
+      const paymentRecord = {
+        amount,
+        date: now,
+        note: note || "Direct payment"
+      }
+
+      // Update patient totals
+      transaction.update(patientRef, {
+        totalPaid: increment(amount),
+        outstandingBalance: increment(-amount),
+        paymentHistory: [...(patient.paymentHistory || []), paymentRecord],
+        updatedAt: now
+      })
+    })
+
+    console.log("✅ ===== DIRECT PAYMENT ADDITION COMPLETED =====")
+  } catch (error) {
+    console.error("❌ ===== DIRECT PAYMENT ADDITION FAILED =====")
+    logError("addPatientPayment", error)
+    throw error
+  }
+}
 
 export const deleteSingleTreatment = async (treatmentId: string) => {
   try {

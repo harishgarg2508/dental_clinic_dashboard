@@ -28,6 +28,7 @@ import {
   updateTreatmentPayment,
   getCompletePatientData,
   deleteSingleTreatment,
+  addPatientPayment,
 } from "@/lib/firebase"
 import { format, differenceInYears } from "date-fns"
 import { toast } from "sonner"
@@ -38,16 +39,23 @@ import {
   sendReceiptToWhatsApp,
 } from "@/lib/receipt-generator"
 
+interface PatientPayment {
+  amount: number
+  date: Date
+  note?: string
+}
+
 interface Patient {
   id: string
   name: string
   phone: string
   age: number
   gender: string
-  firstVisitDate: Date // <-- CORRECT
+  firstVisitDate: Date
   totalBilled: number
   totalPaid: number
   outstandingBalance: number
+  paymentHistory?: PatientPayment[]
 }
 
 interface PaymentRecord {
@@ -82,9 +90,12 @@ export default function PatientDetailPage() {
   const [refreshing, setRefreshing] = useState(false)
   const [showAddTreatment, setShowAddTreatment] = useState(false)
   const [showEditPayment, setShowEditPayment] = useState(false)
+  const [showPaymentDialog, setShowPaymentDialog] = useState(false)
   const [selectedTreatment, setSelectedTreatment] = useState<Treatment | null>(null)
   const [addingTreatment, setAddingTreatment] = useState(false)
   const [updatingPayment, setUpdatingPayment] = useState(false)
+  const [newPaymentAmount, setNewPaymentAmount] = useState("")
+  const [newPaymentNote, setNewPaymentNote] = useState("")
 
  const [newTreatment, setNewTreatment] = useState({
     diagnosis: "",
@@ -173,7 +184,7 @@ export default function PatientDetailPage() {
       const totalAmount = Number.parseFloat(newTreatment.totalAmount)
       const amountPaid = Number.parseFloat(newTreatment.amountPaid) || 0
 
-      if (isNaN(totalAmount) || totalAmount <= 0) {
+      if (isNaN(totalAmount) || totalAmount < 0) {
         toast.error("Please enter a valid total amount")
         return
       }
@@ -232,6 +243,44 @@ export default function PatientDetailPage() {
       setAddingTreatment(false)
     }
   }
+  const handleAddPatientPayment = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setUpdatingPayment(true)
+
+    try {
+      const amount = Number.parseFloat(newPaymentAmount)
+
+      if (isNaN(amount) || amount <= 0) {
+        toast.error("Please enter a valid payment amount")
+        return
+      }
+
+      if (!patient || amount > patient.outstandingBalance) {
+        toast.error("Payment amount cannot exceed outstanding balance")
+        return
+      }
+
+      console.log(`💰 Adding new patient payment: ₹${amount}`)
+
+      // Call the new addPatientPayment function
+      await addPatientPayment(patient.id, amount, newPaymentNote)
+
+      // Reload data to refresh UI
+      await loadPatientData()
+
+      setShowPaymentDialog(false)
+      setNewPaymentAmount("")
+      setNewPaymentNote("")
+
+      toast.success("Payment added successfully!")
+    } catch (error) {
+      console.error("❌ Error adding payment:", error)
+      toast.error("Failed to add payment")
+    } finally {
+      setUpdatingPayment(false)
+    }
+  }
+
   const handleUpdatePayment = async (e: React.FormEvent) => {
     e.preventDefault()
     setUpdatingPayment(true)
@@ -500,28 +549,147 @@ export default function PatientDetailPage() {
   {/* Financial Summary Card */}
   <Card className="bg-white dark:bg-slate-700 transform transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl rounded-xl shadow-lg border border-slate-200 dark:border-slate-800 cursor-pointer">
     <CardHeader>
-      <CardTitle className="flex items-center text-xl font-extrabold text-slate-900 dark:text-slate-100">
-        <Receipt className="mr-3 h-6 w-6 text-green-500" />
-        Financial Summary
+      <CardTitle className="flex items-center justify-between">
+        <div className="flex items-center text-xl font-extrabold text-slate-900 dark:text-slate-100">
+          <Receipt className="mr-3 h-6 w-6 text-green-500" />
+          Financial Summary
+        </div>
+        <Button 
+          variant="outline"
+          className="bg-green-600 hover:bg-green-700 text-white"
+          onClick={() => setShowPaymentDialog(true)}
+          disabled={!patient.outstandingBalance}>
+          <Plus className="mr-2 h-4 w-4" />
+          Add Payment
+        </Button>
       </CardTitle>
     </CardHeader>
-    <CardContent className="space-y-4">
-      <div className="flex justify-between items-baseline">
-        <span className="font-medium text-slate-600 dark:text-slate-400">Total Billed:</span>
-        <span className="text-lg font-bold text-slate-800 dark:text-slate-200">₹{patient.totalBilled.toFixed(2)}</span>
-      </div>
-      <div className="flex justify-between items-baseline">
-        <span className="font-medium text-slate-600 dark:text-slate-400">Total Paid:</span>
-        <span className="text-lg font-bold text-green-600 dark:text-green-500">₹{patient.totalPaid.toFixed(2)}</span>
-      </div>
-      <div className="flex justify-between border-t border-slate-200 dark:border-slate-700 pt-3 mt-2">
-        <span className="text-lg font-semibold text-slate-800 dark:text-slate-200">Outstanding:</span>
-        <span className={`text-2xl font-extrabold ${patient.outstandingBalance > 0 ? "text-red-600 dark:text-red-500" : "text-green-600 dark:text-green-500"}`}>
-          ₹{patient.outstandingBalance.toFixed(2)}
-        </span>
+    <CardContent>
+      <div className="space-y-4">
+        {/* Overall Summary */}
+        <div className="p-3 bg-slate-50 dark:bg-slate-800 rounded-lg space-y-3">
+          <div className="flex justify-between items-baseline">
+            <span className="font-medium text-slate-600 dark:text-slate-400">Total Billed:</span>
+            <span className="text-lg font-bold text-slate-800 dark:text-slate-200">₹{patient.totalBilled.toFixed(2)}</span>
+          </div>
+          <div className="flex justify-between items-baseline">
+            <span className="font-medium text-slate-600 dark:text-slate-400">Total Paid:</span>
+            <span className="text-lg font-bold text-green-600 dark:text-green-500">₹{patient.totalPaid.toFixed(2)}</span>
+          </div>
+          <div className="flex justify-between border-t border-slate-200 dark:border-slate-700 pt-3">
+            <span className="text-lg font-semibold text-slate-800 dark:text-slate-200">Outstanding:</span>
+            <span className={`text-2xl font-extrabold ${patient.outstandingBalance > 0 ? "text-red-600 dark:text-red-500" : "text-green-600 dark:text-green-500"}`}>
+              ₹{patient.outstandingBalance.toFixed(2)}
+            </span>
+          </div>
+        </div>
       </div>
     </CardContent>
   </Card>
+
+  {/* Add Payment Dialog */}
+  <Dialog open={showPaymentDialog} onOpenChange={setShowPaymentDialog}>
+    <DialogContent className="bg-white text-gray-800 border border-gray-200 shadow-xl shadow-blue-100/40 rounded-2xl sm:max-w-[500px]">
+      <DialogHeader className="space-y-3">
+        <DialogTitle className="text-xl font-semibold text-blue-700 flex items-center gap-2">
+          <Receipt className="h-5 w-5" />
+          Add Patient Payment
+        </DialogTitle>
+        <DialogDescription className="text-sm text-gray-600">
+          Add a new payment for <span className="font-medium text-gray-900">{patient.name}</span>. 
+          The amount will be automatically distributed across unpaid treatments in chronological order.
+        </DialogDescription>
+      </DialogHeader>
+
+      <form onSubmit={handleAddPatientPayment} className="space-y-6">
+        <div className="space-y-4 py-4">
+          {/* Current Balance Summary */}
+          <div className="p-4 bg-blue-50 rounded-lg border border-blue-100 space-y-3">
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-gray-600">Current Outstanding:</span>
+              <span className="text-lg font-semibold text-red-600">₹{patient.outstandingBalance.toFixed(2)}</span>
+            </div>
+          </div>
+
+          {/* Payment Amount Input */}
+          <div className="space-y-2">
+            <Label htmlFor="paymentAmount" className="text-gray-700 flex items-center justify-between">
+              <span>Payment Amount</span>
+              <span className="text-xs text-blue-600 font-medium">Max: ₹{patient.outstandingBalance.toFixed(2)}</span>
+            </Label>
+            <Input
+              id="paymentAmount"
+              placeholder="Enter amount"
+              type="number"
+              step="0.01"
+              min="0"
+              max={patient.outstandingBalance}
+              value={newPaymentAmount}
+              onChange={(e) => setNewPaymentAmount(e.target.value)}
+              required
+              className="bg-white border-2 border-gray-300 text-gray-900 placeholder-gray-400 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div>
+
+          {/* Payment Note */}
+          <div className="space-y-2">
+            <Label htmlFor="paymentNote" className="text-gray-700">Note (Optional)</Label>
+            <Textarea
+              id="paymentNote"
+              placeholder="Add a note for this payment"
+              value={newPaymentNote}
+              onChange={(e) => setNewPaymentNote(e.target.value)}
+              className="bg-white border-2 border-gray-300 text-gray-900 placeholder-gray-400 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-h-[80px]"
+            />
+          </div>
+
+          {/* Payment Preview */}
+          {newPaymentAmount && (
+            <div className="p-4 bg-green-50 rounded-lg border border-green-100 space-y-2">
+              <div className="flex justify-between items-baseline text-sm">
+                <span className="text-gray-600">Current Outstanding:</span>
+                <span className="font-medium text-red-600">₹{patient.outstandingBalance.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between items-baseline text-sm">
+                <span className="text-gray-600">Payment Amount:</span>
+                <span className="font-medium text-green-600">₹{Number(newPaymentAmount).toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between items-baseline text-sm pt-2 border-t border-green-200">
+                <span className="font-medium text-gray-700">New Balance:</span>
+                <span className="font-semibold text-blue-600">
+                  ₹{(patient.outstandingBalance - Number(newPaymentAmount)).toFixed(2)}
+                </span>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <DialogFooter className="flex gap-3 pt-2 border-t border-gray-200">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setShowPaymentDialog(false)}
+            disabled={updatingPayment}
+            className="flex-1 border-gray-300 text-gray-700 hover:bg-gray-100">
+            Cancel
+          </Button>
+          <Button 
+            type="submit" 
+            disabled={updatingPayment || !newPaymentAmount}
+            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white">
+            {updatingPayment ? (
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                <span>Adding...</span>
+              </div>
+            ) : (
+              <>Add Payment</>
+            )}
+          </Button>
+        </DialogFooter>
+      </form>
+    </DialogContent>
+  </Dialog>
 
   {/* Treatment Statistics Card */}
   <Card className="bg-white dark:bg-slate-700 transform transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl rounded-xl shadow-lg border border-slate-200 dark:border-slate-800 cursor-pointer">
@@ -696,7 +864,7 @@ export default function PatientDetailPage() {
 </Card>
 
 
-  {/* Add Treatment Dialog */}
+{/* Add Treatment Dialog */}
 <Dialog open={showAddTreatment} onOpenChange={setShowAddTreatment}>
   <DialogContent className="sm:max-w-[600px] bg-white dark:bg-slate-900">
     <DialogHeader>
@@ -778,7 +946,6 @@ export default function PatientDetailPage() {
                 type="date"
                 value={newTreatment.tro}
                 onChange={(e) => setNewTreatment((prev) => ({ ...prev, tro: e.target.value }))}
-                min={new Date().toISOString().split('T')[0]}
                 className="bg-slate-50 border-slate-300 text-slate-900 focus:ring-2 focus:ring-blue-500 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-50 dark:focus:ring-blue-600"
               />
             </div>
@@ -793,7 +960,7 @@ export default function PatientDetailPage() {
               id="totalAmount"
               type="number"
               step="0.01"
-              min="0"
+              min="-1"
               value={newTreatment.totalAmount}
               onChange={(e) => setNewTreatment((prev) => ({ ...prev, totalAmount: e.target.value }))}
               placeholder="0.00"
@@ -809,7 +976,7 @@ export default function PatientDetailPage() {
               id="amountPaid"
               type="number"
               step="0.01"
-              min="0"
+              min="-1"
               value={newTreatment.amountPaid}
               onChange={(e) => setNewTreatment((prev) => ({ ...prev, amountPaid: e.target.value }))}
               placeholder="0.00"
