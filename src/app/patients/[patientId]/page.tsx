@@ -50,6 +50,12 @@ interface Patient {
   outstandingBalance: number
 }
 
+interface PaymentRecord {
+  amount: number
+  date: Date | { toDate(): Date } // Support both Date and Firestore Timestamp
+  note?: string
+}
+
 interface Treatment {
   id: string
   patientId: string
@@ -63,6 +69,7 @@ interface Treatment {
   balance: number
   paymentStatus: "PAID" | "UNPAID" | "PARTIALLY_PAID"
   tro?: Date
+  paymentHistory: PaymentRecord[]
 }
 
 export default function PatientDetailPage() {
@@ -90,6 +97,7 @@ export default function PatientDetailPage() {
   })
 
   const [paymentAmount, setPaymentAmount] = useState("")
+  const [paymentNote, setPaymentNote] = useState("")
 
   const handleDeleteTreatment = async (treatmentId: string, diagnosis: string) => {
     if (window.confirm(`Are you sure you want to delete the treatment: "${diagnosis}"? This action cannot be undone.`)) {
@@ -186,8 +194,13 @@ export default function PatientDetailPage() {
         toothNumber: newTreatment.toothNumber.trim(),
         totalAmount,
         amountPaid,
-        entryDate: new Date(newTreatment.entryDate), // Use the specified entry date
+        entryDate: new Date(newTreatment.entryDate),
         tro: newTreatment.tro ? new Date(newTreatment.tro) : undefined,
+        paymentHistory: amountPaid > 0 ? [{
+          amount: amountPaid,
+          date: new Date(),
+          note: "Initial payment"
+        }] : []
       }
 
       console.log(`🏥 Prepared treatment data:`, treatmentData)
@@ -226,21 +239,21 @@ export default function PatientDetailPage() {
     if (!selectedTreatment) return
 
     try {
-      const amount = Number.parseFloat(paymentAmount)
+      const newAmount = Number.parseFloat(paymentAmount)
 
-      if (isNaN(amount) || amount < 0) {
+      if (isNaN(newAmount) || newAmount < 0) {
         toast.error("Please enter a valid payment amount")
         return
       }
 
-      if (amount > selectedTreatment.totalAmount) {
-        toast.error("Payment amount cannot exceed total amount")
+      if (newAmount > (selectedTreatment.totalAmount - selectedTreatment.amountPaid)) {
+        toast.error("New payment amount cannot exceed remaining balance")
         return
       }
 
-      console.log(`💰 Updating payment for treatment ${selectedTreatment.id} to ₹${amount}`)
+      console.log(`💰 Adding new payment for treatment ${selectedTreatment.id}: ₹${newAmount}`)
 
-      await updateTreatmentPayment(selectedTreatment.id, amount)
+      await updateTreatmentPayment(selectedTreatment.id, newAmount, paymentNote)
 
       // Reload data
       await loadPatientData()
@@ -248,11 +261,12 @@ export default function PatientDetailPage() {
       setShowEditPayment(false)
       setSelectedTreatment(null)
       setPaymentAmount("")
+      setPaymentNote("")
 
-      toast.success("Payment updated successfully!")
+      toast.success("Payment added successfully!")
     } catch (error) {
-      console.error("❌ Error updating payment:", error)
-      toast.error("Failed to update payment")
+      console.error("❌ Error adding payment:", error)
+      toast.error("Failed to add payment")
     } finally {
       setUpdatingPayment(false)
     }
@@ -847,90 +861,210 @@ export default function PatientDetailPage() {
 </Dialog>
 
 
-     {/* Edit Payment Dialog */}
+{/* Add Payment Dialog */}
 <Dialog open={showEditPayment} onOpenChange={setShowEditPayment}>
-  <DialogContent className="bg-gray-900 text-gray-100">
-    <DialogHeader>
-      <DialogTitle className="text-lg font-semibold text-white">Update Payment</DialogTitle>
-      <DialogDescription className="text-sm text-gray-400">
-        Update payment for treatment: {selectedTreatment?.diagnosis}
-      </DialogDescription>
-    </DialogHeader>
-    <form onSubmit={handleUpdatePayment}>
-      <div className="grid gap-4 py-4">
-        <div className="space-y-2">
-          <Label className="text-gray-300">Treatment Details</Label>
-          <div className="p-3 bg-gray-800 rounded-lg text-sm space-y-1">
-            <div className="flex justify-between">
-              <span className="text-gray-400">Total Amount:</span>
-              <span className="font-medium text-white">₹{selectedTreatment?.totalAmount.toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-400">Current Paid:</span>
-              <span className="font-medium text-green-400">₹{selectedTreatment?.amountPaid.toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-400">Current Balance:</span>
-              <span className="font-medium text-red-400">₹{selectedTreatment?.balance.toFixed(2)}</span>
-            </div>
+  <DialogContent className="bg-white text-gray-800 border border-gray-200 shadow-xl shadow-blue-100/40 rounded-2xl flex flex-col max-h-[90vh] max-w-2xl">
+  <style jsx global>{`
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 8px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: rgba(229, 231, 235, 0.6);
+      border-radius: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: rgba(59, 130, 246, 0.4);
+      border-radius: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: rgba(59, 130, 246, 0.7);
+    }
+  `}</style>
+
+  <DialogHeader className="flex-shrink-0">
+    <DialogTitle className="text-lg font-semibold text-blue-700">Add New Payment</DialogTitle>
+    <DialogDescription className="text-sm text-gray-500">
+      Add payment for treatment: {selectedTreatment?.diagnosis}
+    </DialogDescription>
+  </DialogHeader>
+
+  <form onSubmit={handleUpdatePayment} className="flex flex-col overflow-hidden flex-1">
+    <div className="grid gap-4 py-4 overflow-y-auto custom-scrollbar">
+
+      {/* Treatment Details */}
+      <div className="space-y-2">
+        <Label className="text-gray-700 font-medium">Treatment Details</Label>
+        <div className="p-3 bg-blue-50 rounded-lg text-sm space-y-1 border border-blue-100">
+          <div className="flex justify-between">
+            <span className="text-gray-600">Total Amount:</span>
+            <span className="font-semibold text-gray-900">
+              ₹{selectedTreatment?.totalAmount.toFixed(2)}
+            </span>
           </div>
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="paymentAmount" className="text-gray-300">New Payment Amount</Label>
-          <Input
-            id="paymentAmount"
-            type="number"
-            step="0.01"
-            min="0"
-            max={selectedTreatment?.totalAmount}
-            value={paymentAmount}
-            onChange={(e) => setPaymentAmount(e.target.value)}
-            placeholder="0.00"
-            required
-            className="bg-gray-800 border-gray-700 text-white placeholder-gray-500"
-          />
-        </div>
-
-        <div className="p-3 bg-gray-800 rounded-lg">
-          <div className="text-sm">
-            <div className="flex justify-between font-medium">
-              <span className="text-gray-400">New Balance:</span>
-              <span
-                className={
-                  (selectedTreatment?.totalAmount || 0) - Number.parseFloat(paymentAmount || "0") > 0
-                    ? "text-red-400"
-                    : "text-green-400"
-                }
-              >
-                ₹{((selectedTreatment?.totalAmount || 0) - Number.parseFloat(paymentAmount || "0")).toFixed(2)}
-              </span>
-            </div>
+          <div className="flex justify-between">
+            <span className="text-gray-600">Previously Paid:</span>
+            <span className="font-semibold text-green-600">
+              ₹{(selectedTreatment?.amountPaid || 0).toFixed(2)}
+            </span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-gray-600">Current Balance:</span>
+            <span className="font-semibold text-red-600">
+              ₹{selectedTreatment?.balance.toFixed(2)}
+            </span>
           </div>
         </div>
       </div>
-      <DialogFooter className="mt-4">
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => setShowEditPayment(false)}
-          disabled={updatingPayment}
-          className="border-gray-600 text-gray-300 hover:bg-gray-800"
-        >
-          Cancel
-        </Button>
+
+      {/* Only show payment fields if balance remains */}
+      {(selectedTreatment?.balance ?? 0) > 0 && (
+        <>
+          {/* New Payment Input */}
+          <div className="space-y-2">
+            <Label htmlFor="paymentAmount" className="text-gray-700 flex items-center justify-between">
+              <span>New Payment Amount</span>
+            </Label>
+            <Input
+              id="paymentAmount"
+              type="number"
+              step="0.01"
+              min="0"
+              max={selectedTreatment?.balance}
+              value={paymentAmount}
+              onChange={(e) => setPaymentAmount(e.target.value)}
+              placeholder="0.00"
+              required
+              // --- CHANGES HERE ---
+              className="bg-white border-2 border-gray-300 text-gray-900 placeholder-gray-400 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm"
+            />
+            <p className="text-xs text-blue-500">
+              Maximum remaining amount: ₹{(selectedTreatment?.balance ?? 0).toFixed(2)}
+            </p>
+          </div>
+
+          {/* Payment Note */}
+          <div className="space-y-2">
+            <Label htmlFor="paymentNote" className="text-gray-700">Payment Note (Optional)</Label>
+            <Textarea
+              id="paymentNote"
+              value={paymentNote}
+              onChange={(e) => setPaymentNote(e.target.value)}
+              placeholder="Add any notes about this payment..."
+              // --- CHANGES HERE ---
+              className="bg-white border-2 border-gray-300 text-gray-900 placeholder-gray-400 rounded-lg focus:ring-2 focus:ring-blue-400 shadow-sm"
+            />
+          </div>
+
+          {/* Updated Summary */}
+          <div className="p-3 bg-green-50 rounded-lg border border-green-100">
+            <div className="text-sm space-y-2">
+              <div className="flex justify-between font-medium">
+                <span className="text-gray-600">Total After New Payment:</span>
+                <span className="text-green-700">
+                  ₹{((selectedTreatment?.amountPaid || 0) + Number.parseFloat(paymentAmount || "0")).toFixed(2)}
+                </span>
+              </div>
+              <div className="flex justify-between font-medium">
+                <span className="text-gray-600">New Balance:</span>
+                <span
+                  className={
+                    (selectedTreatment?.totalAmount || 0) - ((selectedTreatment?.amountPaid || 0) + Number.parseFloat(paymentAmount || "0")) > 0
+                      ? "text-red-600"
+                      : "text-green-700 font-semibold"
+                  }
+                >
+                  ₹{((selectedTreatment?.totalAmount || 0) - ((selectedTreatment?.amountPaid || 0) + Number.parseFloat(paymentAmount || "0"))).toFixed(2)}
+                </span>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Payment History */}
+      {selectedTreatment?.paymentHistory && selectedTreatment.paymentHistory.length > 0 && (
+        <div className="space-y-2">
+          <Label className="text-gray-700 flex items-center justify-between font-medium">
+            <span>Payment History</span>
+            <span className="text-xs font-medium text-blue-600">
+              {selectedTreatment.paymentHistory.length} payment{selectedTreatment.paymentHistory.length !== 1 ? 's' : ''}
+            </span>
+          </Label>
+          <div className="relative">
+            <div className="absolute inset-0 bg-gradient-to-b from-transparent to-white/80 pointer-events-none z-10 h-4 bottom-0"></div>
+            <div className="p-3 bg-gray-50 rounded-lg text-sm space-y-2 max-h-[200px] overflow-y-auto custom-scrollbar border border-gray-200">
+              {selectedTreatment.paymentHistory.map((payment, index) => (
+                <div
+                  key={index}
+                  className={`flex justify-between items-start p-3 rounded-lg transition-colors duration-200 ${
+                    index % 2 === 0 ? 'bg-white' : 'bg-gray-100'
+                  } hover:bg-blue-50`}
+                >
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-green-700 font-semibold">₹{payment.amount.toFixed(2)}</span>
+                      <span className="text-gray-400">•</span>
+                      <p className="text-gray-500 text-xs">
+                        {format(
+                          payment.date instanceof Date
+                            ? payment.date
+                            : payment.date?.toDate?.()
+                              ? payment.date.toDate()
+                              : new Date(),
+                          "MMM dd, yyyy HH:mm"
+                        )}
+                      </p>
+                    </div>
+                    {payment.note && (
+                      <p className="text-gray-500 text-xs mt-1 italic">"{payment.note}"</p>
+                    )}
+                  </div>
+                  <div className="ml-4">
+                    <span className={`text-xs px-2 py-1 rounded-full ${
+                      index === selectedTreatment.paymentHistory.length - 1
+                        ? 'bg-blue-100 text-blue-700 font-medium'
+                        : 'bg-gray-200 text-gray-500'
+                    }`}>
+                      {index === selectedTreatment.paymentHistory.length - 1 ? 'Latest' : `#${index + 1}`}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+
+    {/* Footer */}
+    <DialogFooter className="mt-4 flex-shrink-0">
+      <Button
+        type="button"
+        variant="outline"
+        onClick={() => {
+          setShowEditPayment(false)
+          setPaymentAmount("")
+          setPaymentNote("")
+        }}
+        disabled={updatingPayment}
+        className="border-gray-300 text-gray-700 hover:bg-gray-100 hover:border-blue-300 rounded-lg"
+      >
+        Cancel
+      </Button>
+      {(selectedTreatment?.balance ?? 0) > 0 && (
         <Button
           type="submit"
           disabled={updatingPayment}
-          className="bg-green-600 hover:bg-green-700 text-white"
+          className="bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-md hover:shadow-lg transition-all"
         >
-          {updatingPayment ? "Updating Payment..." : "Update Payment"}
+          {updatingPayment ? "Adding Payment..." : "Add Payment"}
         </Button>
-      </DialogFooter>
-    </form>
-  </DialogContent>
+      )}
+    </DialogFooter>
+  </form>
+</DialogContent>
 </Dialog>
-
-    </div>
+</div>
   )
 }
+

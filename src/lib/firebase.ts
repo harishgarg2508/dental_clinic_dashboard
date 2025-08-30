@@ -65,6 +65,12 @@ export interface Patient {
   updatedAt: Date
 }
 
+export interface PaymentRecord {
+  amount: number
+  date: Date
+  note?: string
+}
+
 export interface Treatment {
   id: string
   patientId: string
@@ -80,6 +86,7 @@ export interface Treatment {
   tro?: Date
   createdAt: Date
   updatedAt: Date
+  paymentHistory: PaymentRecord[]
 }
 
 // Collections
@@ -344,11 +351,11 @@ export const getAllTreatments = async () => {
 }
 
 // ==================== STEP 6: UPDATE TREATMENT PAYMENT ====================
-export const updateTreatmentPayment = async (treatmentId: string, amountPaid: number) => {
+export const updateTreatmentPayment = async (treatmentId: string, newPaymentAmount: number, note?: string) => {
   try {
     console.log(`💰 ===== UPDATING TREATMENT PAYMENT =====`)
     console.log(`🏥 Treatment ID: "${treatmentId}"`)
-    console.log(`💰 New amount paid: $${amountPaid}`)
+    console.log(`💰 New payment amount: $${newPaymentAmount}`)
 
     const now = Timestamp.now()
 
@@ -361,29 +368,40 @@ export const updateTreatmentPayment = async (treatmentId: string, amountPaid: nu
     }
 
     const treatmentData = treatmentSnap.data()
-    const oldAmountPaid = treatmentData.amountPaid
-    const paymentDifference = amountPaid - oldAmountPaid
+    const oldAmountPaid = treatmentData.amountPaid || 0
+    const newTotalPaid = oldAmountPaid + newPaymentAmount
 
-    const newBalance = treatmentData.totalAmount - amountPaid
+    // Create new payment record
+    const newPayment: PaymentRecord = {
+      amount: newPaymentAmount,
+      date: new Date(),
+      note: note
+    }
+
+    // Get existing payment history or initialize empty array
+    const existingHistory = treatmentData.paymentHistory || []
+
+    const newBalance = treatmentData.totalAmount - newTotalPaid
     const newPaymentStatus: Treatment["paymentStatus"] =
-      newBalance <= 0 ? "PAID" : amountPaid > 0 ? "PARTIALLY_PAID" : "UNPAID"
+      newBalance <= 0 ? "PAID" : newTotalPaid > 0 ? "PARTIALLY_PAID" : "UNPAID"
 
-    console.log(`💰 Payment change: $${oldAmountPaid} → $${amountPaid} (diff: $${paymentDifference})`)
+    console.log(`💰 Payment change: $${oldAmountPaid} → $${newTotalPaid} (new payment: $${newPaymentAmount})`)
     console.log(`💰 New balance: $${newBalance}, Status: ${newPaymentStatus}`)
 
-    // Update treatment
+    // Update treatment with new payment history
     await updateDoc(treatmentRef, {
-      amountPaid,
+      amountPaid: newTotalPaid,
       balance: newBalance,
       paymentStatus: newPaymentStatus,
+      paymentHistory: [...existingHistory, newPayment],
       updatedAt: now,
     })
 
     // Update patient totals
     const patientRef = doc(db, PATIENTS_COLLECTION, treatmentData.patientId)
     await updateDoc(patientRef, {
-      totalPaid: increment(paymentDifference),
-      outstandingBalance: increment(-paymentDifference),
+      totalPaid: increment(newPaymentAmount),
+      outstandingBalance: increment(-newPaymentAmount),
       updatedAt: now,
     })
 
@@ -702,6 +720,13 @@ export const addSampleData = async () => {
         amountPaid: 150,
         tro: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
         entryDate: new Date(),
+        paymentHistory: [
+          {
+            amount: 150,
+            date: new Date(),
+            note: "Initial payment"
+          }
+        ],
       },
       {
         diagnosis: "Cavity Filling",
@@ -710,6 +735,13 @@ export const addSampleData = async () => {
         totalAmount: 200,
         amountPaid: 100,
         entryDate: new Date(),
+        paymentHistory: [
+          {
+            amount: 100,
+            date: new Date(),
+            note: "Initial payment"
+          }
+        ],
       },
     ]
 
